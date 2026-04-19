@@ -1,18 +1,33 @@
+import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
+import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:flutter/foundation.dart';
 
 class StationMapViewModel extends ChangeNotifier {
-  StationMapViewModel({required StationRepository repository})
-    : _repository = repository;
+  StationMapViewModel({
+    required StationRepository repository,
+    UserLocationRepository? userLocationRepository,
+  }) : _repository = repository,
+       _userLocationRepository =
+           userLocationRepository ?? const _UnavailableUserLocationRepository();
 
   final StationRepository _repository;
+  final UserLocationRepository _userLocationRepository;
+  static const GeoCoordinate defaultMapCenter = GeoCoordinate(
+    latitude: 43.6046,
+    longitude: 1.4442,
+  );
 
   bool _isLoading = false;
   String? _errorMessage;
   List<Station> _stations = <Station>[];
   Station? _selectedStation;
   bool _hasActiveRide = false;
+  GeoCoordinate _mapCenter = defaultMapCenter;
+  GeoCoordinate? _currentUserLocation;
+  int _locateRequestVersion = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -20,6 +35,9 @@ class StationMapViewModel extends ChangeNotifier {
   Station? get selectedStation => _selectedStation;
   bool get hasActiveRide => _hasActiveRide;
   bool get isReturnMode => _hasActiveRide;
+  GeoCoordinate get mapCenter => _mapCenter;
+  GeoCoordinate? get currentUserLocation => _currentUserLocation;
+  int get locateRequestVersion => _locateRequestVersion;
   bool get showFullStationRerouteAlert {
     return isReturnMode &&
         _selectedStation != null &&
@@ -110,6 +128,21 @@ class StationMapViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<UserLocationStatus> locateCurrentUser() async {
+    final UserLocationResult result = await _userLocationRepository
+        .getCurrentLocation();
+    if (result.status != UserLocationStatus.located ||
+        result.coordinate == null) {
+      return result.status;
+    }
+
+    _mapCenter = result.coordinate!;
+    _currentUserLocation = result.coordinate!;
+    _locateRequestVersion += 1;
+    notifyListeners();
+    return UserLocationStatus.located;
+  }
+
   bool hasAvailabilityForCurrentMode(Station station) {
     return isReturnMode ? station.freeDocks > 0 : station.availableBikes > 0;
   }
@@ -126,11 +159,14 @@ class StationMapViewModel extends ChangeNotifier {
       return stations;
     }
 
-    return _stations.where((Station station) {
-      final String name = station.name.toLowerCase();
-      final String address = station.address.toLowerCase();
-      return name.contains(normalizedQuery) || address.contains(normalizedQuery);
-    }).toList(growable: false);
+    return _stations
+        .where((Station station) {
+          final String name = station.name.toLowerCase();
+          final String address = station.address.toLowerCase();
+          return name.contains(normalizedQuery) ||
+              address.contains(normalizedQuery);
+        })
+        .toList(growable: false);
   }
 
   Station? _findStationById(String id) {
@@ -146,5 +182,14 @@ class StationMapViewModel extends ChangeNotifier {
     final double latDiff = a.latitude - b.latitude;
     final double lngDiff = a.longitude - b.longitude;
     return (latDiff * latDiff) + (lngDiff * lngDiff);
+  }
+}
+
+class _UnavailableUserLocationRepository implements UserLocationRepository {
+  const _UnavailableUserLocationRepository();
+
+  @override
+  Future<UserLocationResult> getCurrentLocation() async {
+    return const UserLocationResult(status: UserLocationStatus.unavailable);
   }
 }

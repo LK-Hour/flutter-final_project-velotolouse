@@ -1,4 +1,7 @@
+import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
+import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,6 +81,64 @@ void main() {
       },
     );
 
+    test('locates current user and updates map center', () async {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+        userLocationRepository: _SuccessUserLocationRepository(),
+      );
+
+      expect(viewModel.mapCenter.latitude, 43.6046);
+      expect(viewModel.mapCenter.longitude, 1.4442);
+      expect(viewModel.currentUserLocation, isNull);
+      expect(viewModel.locateRequestVersion, 0);
+
+      final UserLocationStatus status = await viewModel.locateCurrentUser();
+
+      expect(status, UserLocationStatus.located);
+      expect(viewModel.mapCenter.latitude, 43.6113);
+      expect(viewModel.mapCenter.longitude, 1.4535);
+      expect(viewModel.currentUserLocation, isNotNull);
+      expect(viewModel.currentUserLocation!.latitude, 43.6113);
+      expect(viewModel.currentUserLocation!.longitude, 1.4535);
+      expect(viewModel.locateRequestVersion, 1);
+    });
+
+    test(
+      'increments locate request version on every successful locate',
+      () async {
+        final _CountingUserLocationRepository locationRepository =
+            _CountingUserLocationRepository();
+        final StationMapViewModel viewModel = StationMapViewModel(
+          repository: _SuccessStationRepository(),
+          userLocationRepository: locationRepository,
+        );
+
+        await viewModel.locateCurrentUser();
+        await viewModel.locateCurrentUser();
+
+        expect(locationRepository.calls, 2);
+        expect(viewModel.locateRequestVersion, 2);
+        expect(viewModel.mapCenter.latitude, 43.6113);
+        expect(viewModel.mapCenter.longitude, 1.4535);
+      },
+    );
+
+    test(
+      'reports denied location permission when GPS access is blocked',
+      () async {
+        final StationMapViewModel viewModel = StationMapViewModel(
+          repository: _SuccessStationRepository(),
+          userLocationRepository: _DeniedUserLocationRepository(),
+        );
+
+        final UserLocationStatus status = await viewModel.locateCurrentUser();
+
+        expect(status, UserLocationStatus.permissionDenied);
+        expect(viewModel.mapCenter.latitude, 43.6046);
+        expect(viewModel.mapCenter.longitude, 1.4442);
+      },
+    );
+
     test('exposes an error message when repository fails', () async {
       final StationMapViewModel viewModel = StationMapViewModel(
         repository: _FailingStationRepository(),
@@ -148,5 +209,37 @@ class _RerouteStationRepository implements StationRepository {
         longitude: 1.4449,
       ),
     ];
+  }
+}
+
+class _SuccessUserLocationRepository implements UserLocationRepository {
+  @override
+  Future<UserLocationResult> getCurrentLocation() async {
+    return const UserLocationResult(
+      status: UserLocationStatus.located,
+      coordinate: GeoCoordinate(latitude: 43.6113, longitude: 1.4535),
+    );
+  }
+}
+
+class _DeniedUserLocationRepository implements UserLocationRepository {
+  @override
+  Future<UserLocationResult> getCurrentLocation() async {
+    return const UserLocationResult(
+      status: UserLocationStatus.permissionDenied,
+    );
+  }
+}
+
+class _CountingUserLocationRepository implements UserLocationRepository {
+  int calls = 0;
+
+  @override
+  Future<UserLocationResult> getCurrentLocation() async {
+    calls += 1;
+    return const UserLocationResult(
+      status: UserLocationStatus.located,
+      coordinate: GeoCoordinate(latitude: 43.6113, longitude: 1.4535),
+    );
   }
 }

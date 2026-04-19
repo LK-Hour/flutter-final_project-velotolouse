@@ -1,3 +1,6 @@
+import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
+import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
+import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
 import 'package:final_project_velotolouse/data/repositories/stations/station_repository_mock.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/station_map_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
@@ -85,7 +88,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('search-result-jean-jaures')), findsOneWidget);
-    expect(find.byKey(const Key('search-result-capitole-square')), findsNothing);
+    expect(
+      find.byKey(const Key('search-result-capitole-square')),
+      findsNothing,
+    );
 
     await tester.tap(find.byKey(const Key('search-result-jean-jaures')));
     await tester.pumpAndSettle();
@@ -112,7 +118,6 @@ void main() {
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
 
-    expect(find.text('SMART RETURN MODE ACTIVE'), findsOneWidget);
     expect(find.text('9 Docks'), findsOneWidget);
     expect(find.text('0 Docks'), findsOneWidget);
     expect(find.text('8 Docks'), findsOneWidget);
@@ -179,4 +184,74 @@ void main() {
       moreOrLessEquals((profileCenter.dx - scanCenter.dx).abs(), epsilon: 6),
     );
   });
+
+  testWidgets('locate quick action shows unavailable location feedback', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-action-locate')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unable to find your current location.'), findsOneWidget);
+  });
+
+  testWidgets('locate quick action recenters map to user location', (
+    WidgetTester tester,
+  ) async {
+    final _LocatedUserLocationRepository locationRepository =
+        _LocatedUserLocationRepository();
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+      userLocationRepository: locationRepository,
+    )..loadStations();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-action-locate')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-action-locate')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Centered on your current location.'), findsOneWidget);
+    expect(
+      find.byKey(const Key('current-location-fallback-marker')),
+      findsOneWidget,
+    );
+    expect(locationRepository.calls, 2);
+    expect(viewModel.locateRequestVersion, 2);
+    expect(viewModel.mapCenter.latitude, 43.6113);
+    expect(viewModel.mapCenter.longitude, 1.4535);
+  });
+}
+
+class _LocatedUserLocationRepository implements UserLocationRepository {
+  int calls = 0;
+
+  @override
+  Future<UserLocationResult> getCurrentLocation() async {
+    calls += 1;
+    return const UserLocationResult(
+      status: UserLocationStatus.located,
+      coordinate: GeoCoordinate(latitude: 43.6113, longitude: 1.4535),
+    );
+  }
 }

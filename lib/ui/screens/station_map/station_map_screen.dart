@@ -1,3 +1,4 @@
+import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
@@ -70,6 +71,37 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(const SnackBar(content: Text('QR scan is coming soon.')));
   }
 
+  Future<void> _onLocateCurrentPositionPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) async {
+    final UserLocationStatus status = await viewModel.locateCurrentUser();
+    if (!context.mounted) {
+      return;
+    }
+
+    final String message = switch (status) {
+      UserLocationStatus.located => 'Centered on your current location.',
+      UserLocationStatus.permissionDenied =>
+        'Location permission denied. Please allow GPS access.',
+      UserLocationStatus.permissionDeniedForever =>
+        'Location permission denied permanently. Enable it in settings.',
+      UserLocationStatus.serviceDisabled =>
+        'GPS is off. Please enable location services.',
+      UserLocationStatus.unavailable => 'Unable to find your current location.',
+    };
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _onLayerButtonPressed(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Map layers are coming soon.')),
+    );
+  }
+
   void _onNavigateHerePressed(BuildContext context, Station station) {
     ScaffoldMessenger.of(
       context,
@@ -123,6 +155,9 @@ class StationMapScreen extends StatelessWidget {
                           stations: viewModel.stations,
                           isReturnMode: viewModel.isReturnMode,
                           selectedStation: selectedStation,
+                          mapCenter: viewModel.mapCenter,
+                          currentUserLocation: viewModel.currentUserLocation,
+                          locateRequestVersion: viewModel.locateRequestVersion,
                           fallbackMarkerPositions: _markerMapPosition,
                           onStationTap: viewModel.selectStation,
                         ),
@@ -146,16 +181,14 @@ class StationMapScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (viewModel.isReturnMode)
-                      const Positioned(
-                        left: 16,
-                        top: 72,
-                        child: _ReturnModeBadge(),
-                      ),
-                    const Positioned(
+                    Positioned(
                       right: 14,
                       top: 210,
-                      child: StationMapQuickActions(),
+                      child: StationMapQuickActions(
+                        onLocateTap: () =>
+                            _onLocateCurrentPositionPressed(context, viewModel),
+                        onLayersTap: () => _onLayerButtonPressed(context),
+                      ),
                     ),
                     const Positioned(
                       right: 48,
@@ -201,36 +234,6 @@ class StationMapScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ReturnModeBadge extends StatelessWidget {
-  const _ReturnModeBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0x1A11B982),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(Icons.verified_rounded, color: AppColors.success, size: 14),
-          SizedBox(width: 6),
-          Text(
-            'SMART RETURN MODE ACTIVE',
-            style: TextStyle(
-              color: AppColors.success,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-            ),
-          ),
-        ],
       ),
     );
   }
