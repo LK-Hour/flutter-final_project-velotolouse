@@ -60,6 +60,22 @@ void main() {
       expect(viewModel.isReturnMode, isFalse);
     });
 
+    test('activates ride from scan only when no ride is active', () {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+      );
+
+      expect(viewModel.hasActiveRide, isFalse);
+      final bool firstActivation = viewModel.activateRideFromScan();
+      expect(firstActivation, isTrue);
+      expect(viewModel.hasActiveRide, isTrue);
+      expect(viewModel.isReturnMode, isTrue);
+
+      final bool secondActivation = viewModel.activateRideFromScan();
+      expect(secondActivation, isFalse);
+      expect(viewModel.hasActiveRide, isTrue);
+    });
+
     test(
       'suggests nearest dock and reroutes when selected return station is full',
       () async {

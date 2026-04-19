@@ -113,6 +113,16 @@ class StationMapViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool activateRideFromScan() {
+    if (_hasActiveRide) {
+      return false;
+    }
+    _hasActiveRide = true;
+    _selectedStation = null;
+    notifyListeners();
+    return true;
+  }
+
   void toggleReturnModeForTesting() {
     _hasActiveRide = !_hasActiveRide;
     _selectedStation = null;

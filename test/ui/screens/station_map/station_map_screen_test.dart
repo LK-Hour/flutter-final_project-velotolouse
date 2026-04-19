@@ -118,9 +118,58 @@ void main() {
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
 
-    expect(find.text('9 Docks'), findsOneWidget);
-    expect(find.text('0 Docks'), findsOneWidget);
-    expect(find.text('8 Docks'), findsOneWidget);
+    expect(find.text('P | 9 Free'), findsOneWidget);
+    expect(find.text('P | Full'), findsOneWidget);
+    expect(find.text('P | 8 Free'), findsOneWidget);
+  });
+
+  testWidgets('scan button starts ride and enables return mode', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bike unlocked. Return mode activated.'), findsOneWidget);
+    expect(find.text('Returning mode ON'), findsOneWidget);
+    expect(find.text('P | 9 Free'), findsOneWidget);
+  });
+
+  testWidgets('shows eta chip for selected dock in return mode', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mode-toggle-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 min away'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('station-marker-carmes')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 min away'), findsOneWidget);
   });
 
   testWidgets('shows reroute alert for full dock station in return mode', (

@@ -138,23 +138,28 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
           return Stack(
             children: <Widget>[
               for (final Station station in widget.stations)
-                StationMarkerWidget(
-                  key: Key('station-marker-${station.id}'),
-                  label: widget.isReturnMode
-                      ? '${station.freeDocks} Docks'
-                      : '${station.availableBikes} Bikes',
-                  isAvailableInCurrentMode: widget.isReturnMode
-                      ? station.freeDocks > 0
-                      : station.availableBikes > 0,
-                  isReturnMode: widget.isReturnMode,
-                  isSelected: widget.selectedStation?.id == station.id,
-                  mapPosition:
-                      widget.fallbackMarkerPositions[station.id] ??
-                      const Offset(0.5, 0.5),
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  onTap: () => widget.onStationTap(station.id),
-                ),
+                () {
+                  final bool isSelected =
+                      widget.selectedStation?.id == station.id;
+                  final bool isAvailable = _hasAvailability(station);
+                  return StationMarkerWidget(
+                    key: Key('station-marker-${station.id}'),
+                    label: _markerLabel(station),
+                    etaLabel: _etaLabel(
+                      isSelected: isSelected,
+                      isAvailable: isAvailable,
+                    ),
+                    isAvailableInCurrentMode: isAvailable,
+                    isReturnMode: widget.isReturnMode,
+                    isSelected: isSelected,
+                    mapPosition:
+                        widget.fallbackMarkerPositions[station.id] ??
+                        const Offset(0.5, 0.5),
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    onTap: () => widget.onStationTap(station.id),
+                  );
+                }(),
               if (widget.currentUserLocation != null)
                 const Positioned.fill(
                   child: IgnorePointer(
@@ -195,12 +200,8 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
   Set<gmaps.Marker> _buildGoogleMarkers() {
     final Set<gmaps.Marker> markers = widget.stations.map((Station station) {
       final bool isSelected = widget.selectedStation?.id == station.id;
-      final bool isAvailable = widget.isReturnMode
-          ? station.freeDocks > 0
-          : station.availableBikes > 0;
-      final String snippet = widget.isReturnMode
-          ? '${station.freeDocks} Docks'
-          : '${station.availableBikes} Bikes';
+      final bool isAvailable = _hasAvailability(station);
+      final String snippet = _markerLabel(station);
 
       return gmaps.Marker(
         markerId: gmaps.MarkerId(station.id),
@@ -239,26 +240,30 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
   List<fmap.Marker> _buildTileMapMarkers() {
     final List<fmap.Marker> markers = widget.stations.map((Station station) {
       final bool isSelected = widget.selectedStation?.id == station.id;
-      final bool isAvailable = widget.isReturnMode
-          ? station.freeDocks > 0
-          : station.availableBikes > 0;
-      final String label = widget.isReturnMode
-          ? '${station.freeDocks} Docks'
-          : '${station.availableBikes} Bikes';
+      final bool isAvailable = _hasAvailability(station);
+      final String label = _markerLabel(station);
+      final String? etaLabel = _etaLabel(
+        isSelected: isSelected,
+        isAvailable: isAvailable,
+      );
 
       return fmap.Marker(
         key: Key('linux-station-marker-${station.id}'),
         point: latlng.LatLng(station.latitude, station.longitude),
-        width: 118,
-        height: 58,
+        width: widget.isReturnMode ? 134 : 86,
+        height: widget.isReturnMode ? (etaLabel == null ? 72 : 88) : 76,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => widget.onStationTap(station.id),
-          child: _LinuxStationMarker(
-            label: label,
-            isSelected: isSelected,
-            isAvailable: isAvailable,
-            isReturnMode: widget.isReturnMode,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: StationMarkerVisual(
+              label: label,
+              etaLabel: etaLabel,
+              isSelected: isSelected,
+              isAvailableInCurrentMode: isAvailable,
+              isReturnMode: widget.isReturnMode,
+            ),
           ),
         ),
       );
@@ -280,6 +285,31 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     }
 
     return markers;
+  }
+
+  bool _hasAvailability(Station station) {
+    return widget.isReturnMode
+        ? station.freeDocks > 0
+        : station.availableBikes > 0;
+  }
+
+  String _markerLabel(Station station) {
+    if (!widget.isReturnMode) {
+      return '${station.availableBikes} Bikes';
+    }
+
+    if (station.freeDocks == 0) {
+      return 'P | Full';
+    }
+
+    return 'P | ${station.freeDocks} Free';
+  }
+
+  String? _etaLabel({required bool isSelected, required bool isAvailable}) {
+    if (!widget.isReturnMode || !isSelected || !isAvailable) {
+      return null;
+    }
+    return '2 min away';
   }
 
   bool _hasMapCenterChanged(GeoCoordinate oldValue, GeoCoordinate newValue) {
@@ -335,59 +365,6 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     return isReturnMode
         ? gmaps.BitmapDescriptor.hueGreen
         : gmaps.BitmapDescriptor.hueOrange;
-  }
-}
-
-class _LinuxStationMarker extends StatelessWidget {
-  const _LinuxStationMarker({
-    required this.label,
-    required this.isSelected,
-    required this.isAvailable,
-    required this.isReturnMode,
-  });
-
-  final String label;
-  final bool isSelected;
-  final bool isAvailable;
-  final bool isReturnMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color backgroundColor;
-    if (isSelected) {
-      backgroundColor = AppColors.slate;
-    } else if (!isAvailable) {
-      backgroundColor = AppColors.neutralText;
-    } else {
-      backgroundColor = isReturnMode ? AppColors.success : AppColors.warning;
-    }
-
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white, width: 2),
-          boxShadow: const <BoxShadow>[
-            BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
-          ),
-        ),
-      ),
-    );
   }
 }
 

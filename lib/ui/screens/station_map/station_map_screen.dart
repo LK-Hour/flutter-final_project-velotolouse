@@ -8,6 +8,7 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -65,10 +66,17 @@ class StationMapScreen extends StatelessWidget {
     );
   }
 
-  void _onScanButtonPressed(BuildContext context) {
+  void _onScanButtonPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    final bool hasStartedRide = viewModel.activateRideFromScan();
+    final String message = hasStartedRide
+        ? 'Bike unlocked. Return mode activated.'
+        : 'Ride already active. Return your bike at an available dock.';
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('QR scan is coming soon.')));
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onLocateCurrentPositionPressed(
@@ -156,25 +164,33 @@ class StationMapScreen extends StatelessWidget {
                           onStationTap: viewModel.selectStation,
                         ),
                       ),
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      top: 12,
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: StationMapSearchField(
-                              onTap: () => _onSearchTapped(context, viewModel),
+                    if (viewModel.isReturnMode)
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: ReturnModeBanner(),
+                      )
+                    else
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        top: 12,
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: StationMapSearchField(
+                                onTap: () => _onSearchTapped(context, viewModel),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          StationMapModeButton(
-                            isReturnMode: viewModel.isReturnMode,
-                            onTap: () => _onTopRightButtonTapped(context),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            StationMapModeButton(
+                              isReturnMode: viewModel.isReturnMode,
+                              onTap: () => _onTopRightButtonTapped(context),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     Positioned(
                       right: 14,
                       bottom: 150,
@@ -222,7 +238,7 @@ class StationMapScreen extends StatelessWidget {
               child: BottomRidePanel(
                 selectedStationName: selectedStation?.name,
                 isReturnMode: viewModel.isReturnMode,
-                onScanTap: () => _onScanButtonPressed(context),
+                onScanTap: () => _onScanButtonPressed(context, viewModel),
               ),
             ),
           ],

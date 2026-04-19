@@ -41,7 +41,7 @@ lib/
 Implemented behaviors include:
 - Loading station data via repository abstraction
 - Selecting station markers and opening station detail popup
-- Switching to return mode (debug toggle)
+- Switching to return mode after scan-based bike unlock (debug toggle kept for testing)
 - Showing dock availability based on active mode
 - Suggesting alternative stations when selected return station has no free docks
 - Bottom action area with ride/profile + scan button
