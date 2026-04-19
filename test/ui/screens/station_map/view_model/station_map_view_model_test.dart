@@ -33,6 +33,30 @@ void main() {
       expect(viewModel.selectedStation, isNull);
     });
 
+    test('switches to return mode only when user has active ride', () async {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+      );
+
+      expect(viewModel.isReturnMode, isFalse);
+      viewModel.setHasActiveRide(true);
+      expect(viewModel.isReturnMode, isTrue);
+      viewModel.setHasActiveRide(false);
+      expect(viewModel.isReturnMode, isFalse);
+    });
+
+    test('toggles return mode for testing', () {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+      );
+
+      expect(viewModel.isReturnMode, isFalse);
+      viewModel.toggleReturnModeForTesting();
+      expect(viewModel.isReturnMode, isTrue);
+      viewModel.toggleReturnModeForTesting();
+      expect(viewModel.isReturnMode, isFalse);
+    });
+
     test('exposes an error message when repository fails', () async {
       final StationMapViewModel viewModel = StationMapViewModel(
         repository: _FailingStationRepository(),

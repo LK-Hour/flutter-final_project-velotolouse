@@ -6,11 +6,13 @@ class StationInfoPopup extends StatelessWidget {
   const StationInfoPopup({
     super.key,
     required this.station,
+    required this.isReturnMode,
     required this.onClose,
     required this.onNavigate,
   });
 
   final Station station;
+  final bool isReturnMode;
   final VoidCallback onClose;
   final VoidCallback onNavigate;
 
@@ -68,13 +70,17 @@ class StationInfoPopup extends StatelessWidget {
           Row(
             children: <Widget>[
               _StationInfoPill(
-                label: 'Available Bikes',
-                value: '${station.availableBikes}',
+                label: isReturnMode ? 'Free Docks' : 'Available Bikes',
+                value: isReturnMode
+                    ? '${station.freeDocks}'
+                    : '${station.availableBikes}',
               ),
               const SizedBox(width: 8),
               _StationInfoPill(
-                label: 'Empty Slots',
-                value: '${station.freeDocks}',
+                label: isReturnMode ? 'Total Capacity' : 'Empty Slots',
+                value: isReturnMode
+                    ? '${station.totalCapacity}'
+                    : '${station.freeDocks}',
               ),
             ],
           ),

@@ -1,11 +1,12 @@
-import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class StationMarkerWidget extends StatelessWidget {
   const StationMarkerWidget({
     super.key,
-    required this.station,
+    required this.label,
+    required this.isAvailableInCurrentMode,
+    required this.isReturnMode,
     required this.isSelected,
     required this.mapPosition,
     required this.width,
@@ -13,7 +14,9 @@ class StationMarkerWidget extends StatelessWidget {
     required this.onTap,
   });
 
-  final Station station;
+  final String label;
+  final bool isAvailableInCurrentMode;
+  final bool isReturnMode;
   final bool isSelected;
   final Offset mapPosition;
   final double width;
@@ -37,7 +40,9 @@ class StationMarkerWidget extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.warning,
+                  color: isAvailableInCurrentMode
+                      ? (isReturnMode ? AppColors.success : AppColors.warning)
+                      : AppColors.muted,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: isSelected
@@ -55,8 +60,10 @@ class StationMarkerWidget extends StatelessWidget {
                         ]
                       : null,
                 ),
-                child: const Icon(
-                  Icons.pedal_bike_rounded,
+                child: Icon(
+                  isReturnMode
+                      ? Icons.local_parking_rounded
+                      : Icons.pedal_bike_rounded,
                   color: Colors.white,
                   size: 18,
                 ),
@@ -69,9 +76,11 @@ class StationMarkerWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  '${station.availableBikes} Bikes',
-                  style: const TextStyle(
-                    color: AppColors.warning,
+                  label,
+                  style: TextStyle(
+                    color: isAvailableInCurrentMode
+                        ? (isReturnMode ? AppColors.success : AppColors.warning)
+                        : AppColors.neutralText,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),

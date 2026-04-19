@@ -1,5 +1,6 @@
 import 'package:final_project_velotolouse/ui/screens/station_map/station_map_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
 class VeloToulouseApp extends StatelessWidget {
@@ -9,6 +10,8 @@ class VeloToulouseApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       title: 'VeloToulouse',
       theme: appTheme,
       home: const StationMapScreen(),

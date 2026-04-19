@@ -2,15 +2,21 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class BottomRidePanel extends StatelessWidget {
-  const BottomRidePanel({super.key, this.onScanTap, this.selectedStationName});
+  const BottomRidePanel({
+    super.key,
+    this.onScanTap,
+    this.selectedStationName,
+    this.isReturnMode = false,
+  });
 
   final VoidCallback? onScanTap;
   final String? selectedStationName;
+  final bool isReturnMode;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 112,
+      height: 132,
       decoration: const BoxDecoration(
         color: AppColors.baseSurfaceAlt,
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
@@ -24,21 +30,22 @@ class BottomRidePanel extends StatelessWidget {
             right: 0,
             child: Center(child: _PanelHandle()),
           ),
-          const Positioned(
+          Positioned(
             top: 22,
             left: 20,
+            bottom: 18,
             child: Text(
-              'Ready to ride?',
-              style: TextStyle(
+              isReturnMode ? 'Returning mode ON' : 'Ready to ride?',
+              style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontSize: 22,
               ),
             ),
           ),
           if (selectedStationName != null)
             Positioned(
-              top: 42,
+              top: 46,
               left: 20,
               child: Text(
                 selectedStationName!,
@@ -107,7 +114,7 @@ class _BottomBarContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 54,
+      height: 64,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -119,8 +126,7 @@ class _BottomBarContent extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
+                  child: Center(
                     child: _BottomNavItem(
                       label: 'Ride',
                       icon: Icons.pedal_bike,
@@ -131,8 +137,7 @@ class _BottomBarContent extends StatelessWidget {
                 ),
                 const SizedBox(width: 74),
                 Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
+                  child: Center(
                     child: _BottomNavItem(
                       label: 'Profile',
                       icon: Icons.person_outline,
@@ -166,7 +171,7 @@ class _BottomBarContent extends StatelessWidget {
                 child: const Icon(
                   Icons.qr_code_scanner_rounded,
                   color: Colors.white,
-                  size: 24,
+                  size: 30,
                 ),
               ),
             ),
@@ -199,14 +204,14 @@ class _BottomNavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, color: color, size: 17),
-          const SizedBox(height: 2),
+          Icon(icon, color: color, size: 30),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w500,
-              fontSize: 11,
+              fontSize: 20,
             ),
           ),
         ],

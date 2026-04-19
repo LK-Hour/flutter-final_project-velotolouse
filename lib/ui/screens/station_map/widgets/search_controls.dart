@@ -56,20 +56,26 @@ class StationMapSearchField extends StatelessWidget {
 }
 
 class StationMapModeButton extends StatelessWidget {
-  const StationMapModeButton({super.key, this.onTap});
+  const StationMapModeButton({
+    super.key,
+    this.onTap,
+    this.isReturnMode = false,
+  });
 
   final VoidCallback? onTap;
+  final bool isReturnMode;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: const Key('mode-toggle-button'),
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         width: 32,
         height: 42,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: isReturnMode ? AppColors.warning : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.baseSurface),
           boxShadow: const <BoxShadow>[
@@ -80,9 +86,9 @@ class StationMapModeButton extends StatelessWidget {
             ),
           ],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.phone_iphone_rounded,
-          color: AppColors.warning,
+          color: isReturnMode ? Colors.white : AppColors.warning,
           size: 16,
         ),
       ),

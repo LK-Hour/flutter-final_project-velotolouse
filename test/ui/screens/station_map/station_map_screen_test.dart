@@ -57,4 +57,58 @@ void main() {
     expect(find.text('Empty Slots'), findsOneWidget);
     expect(find.text('Navigate Here'), findsOneWidget);
   });
+
+  testWidgets('switches map mode for testing when mode button is tapped', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mode-toggle-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('SMART RETURN MODE ACTIVE'), findsOneWidget);
+    expect(find.text('9 Docks'), findsNWidgets(2));
+    expect(find.text('8 Docks'), findsOneWidget);
+  });
+
+  testWidgets('keeps bottom nav buttons aligned around scan button', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final Finder rideLabel = find.text('Ride');
+    final Finder profileLabel = find.text('Profile');
+    final Finder scanButton = find.byKey(const Key('scan-button'));
+
+    final Offset rideCenter = tester.getCenter(rideLabel);
+    final Offset profileCenter = tester.getCenter(profileLabel);
+    final Offset scanCenter = tester.getCenter(scanButton);
+
+    expect(rideCenter.dy, moreOrLessEquals(profileCenter.dy, epsilon: 1));
+    expect(
+      (scanCenter.dx - rideCenter.dx).abs(),
+      moreOrLessEquals((profileCenter.dx - scanCenter.dx).abs(), epsilon: 6),
+    );
+  });
 }

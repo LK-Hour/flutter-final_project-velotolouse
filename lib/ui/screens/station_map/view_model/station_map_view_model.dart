@@ -12,11 +12,14 @@ class StationMapViewModel extends ChangeNotifier {
   String? _errorMessage;
   List<Station> _stations = <Station>[];
   Station? _selectedStation;
+  bool _hasActiveRide = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<Station> get stations => List<Station>.unmodifiable(_stations);
   Station? get selectedStation => _selectedStation;
+  bool get hasActiveRide => _hasActiveRide;
+  bool get isReturnMode => _hasActiveRide;
 
   Future<void> loadStations() async {
     _isLoading = true;
@@ -52,6 +55,31 @@ class StationMapViewModel extends ChangeNotifier {
     }
     _selectedStation = null;
     notifyListeners();
+  }
+
+  void setHasActiveRide(bool value) {
+    if (_hasActiveRide == value) {
+      return;
+    }
+    _hasActiveRide = value;
+    _selectedStation = null;
+    notifyListeners();
+  }
+
+  void toggleReturnModeForTesting() {
+    _hasActiveRide = !_hasActiveRide;
+    _selectedStation = null;
+    notifyListeners();
+  }
+
+  bool hasAvailabilityForCurrentMode(Station station) {
+    return isReturnMode ? station.freeDocks > 0 : station.availableBikes > 0;
+  }
+
+  String availabilityLabelForCurrentMode(Station station) {
+    return isReturnMode
+        ? '${station.freeDocks} Docks'
+        : '${station.availableBikes} Bikes';
   }
 
   Station? _findStationById(String id) {
