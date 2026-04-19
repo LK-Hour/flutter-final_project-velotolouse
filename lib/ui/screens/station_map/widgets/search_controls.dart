@@ -2,9 +2,14 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class StationMapSearchField extends StatelessWidget {
-  const StationMapSearchField({super.key, this.onTap});
+  const StationMapSearchField({
+    super.key,
+    this.onTap,
+    this.placeholderText = 'Find a station or destination...',
+  });
 
   final VoidCallback? onTap;
+  final String placeholderText;
 
   @override
   Widget build(BuildContext context) {
@@ -29,23 +34,23 @@ class StationMapSearchField extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               children: <Widget>[
-                SizedBox(width: 12),
-                Icon(Icons.search, color: AppColors.neutralText, size: 20),
-                SizedBox(width: 8),
+                const SizedBox(width: 12),
+                const Icon(Icons.search, color: AppColors.neutralText, size: 20),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Find a station or destination...',
+                    placeholderText,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.neutralText,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                Icon(Icons.tune, color: AppColors.warning, size: 19),
-                SizedBox(width: 12),
+                const Icon(Icons.tune, color: AppColors.warning, size: 19),
+                const SizedBox(width: 12),
               ],
             ),
           ),

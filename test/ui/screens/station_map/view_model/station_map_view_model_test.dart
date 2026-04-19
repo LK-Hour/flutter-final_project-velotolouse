@@ -109,6 +109,49 @@ void main() {
     });
 
     test(
+      'returns bike and exits return mode only at available station',
+      () async {
+        final StationMapViewModel viewModel = StationMapViewModel(
+          repository: _SuccessStationRepository(),
+        );
+        await viewModel.loadStations();
+
+        final Station station = viewModel.stations.first;
+        expect(
+          viewModel.returnBikeToStation(station),
+          ReturnBikeResult.noActiveRide,
+        );
+
+        viewModel.activateRideFromScan();
+        expect(
+          viewModel.returnBikeToStation(station),
+          ReturnBikeResult.success,
+        );
+        expect(viewModel.hasActiveRide, isFalse);
+        expect(viewModel.isReturnMode, isFalse);
+        expect(viewModel.stations.first.availableBikes, 4);
+        expect(viewModel.stations.first.freeDocks, 6);
+
+        viewModel.activateRideFromScan();
+        const Station fullStation = Station(
+          id: 'full',
+          name: 'Full',
+          address: 'Address',
+          availableBikes: 5,
+          totalCapacity: 5,
+          latitude: 43.6,
+          longitude: 1.44,
+        );
+        expect(
+          viewModel.returnBikeToStation(fullStation),
+          ReturnBikeResult.stationFull,
+        );
+        expect(viewModel.hasActiveRide, isTrue);
+        expect(viewModel.isReturnMode, isTrue);
+      },
+    );
+
+    test(
       'suggests nearest dock and reroutes when selected return station is full',
       () async {
         final StationMapViewModel viewModel = StationMapViewModel(

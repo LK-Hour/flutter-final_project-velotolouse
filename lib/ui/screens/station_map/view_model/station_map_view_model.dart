@@ -5,6 +5,8 @@ import 'package:final_project_velotolouse/domain/repositories/location/user_loca
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:flutter/foundation.dart';
 
+enum ReturnBikeResult { success, noActiveRide, stationFull }
+
 class StationMapViewModel extends ChangeNotifier {
   StationMapViewModel({
     required StationRepository repository,
@@ -132,6 +134,33 @@ class StationMapViewModel extends ChangeNotifier {
     return true;
   }
 
+  ReturnBikeResult returnBikeToStation(Station station) {
+    if (!_hasActiveRide) {
+      return ReturnBikeResult.noActiveRide;
+    }
+    final Station? matchedStation = _findStationById(station.id);
+    final Station targetStation = matchedStation ?? station;
+
+    if (targetStation.freeDocks <= 0) {
+      return ReturnBikeResult.stationFull;
+    }
+    if (matchedStation != null) {
+      _stations = _stations
+          .map((Station currentStation) {
+            if (currentStation.id != matchedStation.id) {
+              return currentStation;
+            }
+            return currentStation.copyWith(
+              availableBikes: currentStation.availableBikes + 1,
+            );
+          })
+          .toList(growable: false);
+    }
+    _applyRideState(isActive: false);
+    notifyListeners();
+    return ReturnBikeResult.success;
+  }
+
   bool dismissReturnModeBanner() {
     if (!showReturnModeBanner) {
       return false;
@@ -182,18 +211,30 @@ class StationMapViewModel extends ChangeNotifier {
 
   List<Station> searchStations(String query) {
     final String normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.isEmpty) {
-      return stations;
-    }
-
-    return _stations
+    final List<Station> results = _stations
         .where((Station station) {
+          if (normalizedQuery.isEmpty) {
+            return true;
+          }
           final String name = station.name.toLowerCase();
           final String address = station.address.toLowerCase();
           return name.contains(normalizedQuery) ||
               address.contains(normalizedQuery);
         })
-        .toList(growable: false);
+        .toList(growable: true);
+
+    if (isReturnMode) {
+      results.sort((Station a, Station b) {
+        final bool aHasAvailability = hasAvailabilityForCurrentMode(a);
+        final bool bHasAvailability = hasAvailabilityForCurrentMode(b);
+        if (aHasAvailability != bHasAvailability) {
+          return aHasAvailability ? -1 : 1;
+        }
+        return a.name.compareTo(b.name);
+      });
+    }
+
+    return results.toList(growable: false);
   }
 
   Station? _findStationById(String id) {

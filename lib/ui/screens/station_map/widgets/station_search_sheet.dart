@@ -3,6 +3,8 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 typedef StationSearchQuery = List<Station> Function(String query);
+typedef StationAvailabilityLabel = String Function(Station station);
+typedef StationSelectionRule = bool Function(Station station);
 
 class StationSearchSheet extends StatefulWidget {
   const StationSearchSheet({
@@ -10,11 +12,15 @@ class StationSearchSheet extends StatefulWidget {
     required this.onSearch,
     required this.onSelectStation,
     required this.isReturnMode,
+    required this.availabilityLabelForStation,
+    required this.canSelectStation,
   });
 
   final StationSearchQuery onSearch;
   final ValueChanged<String> onSelectStation;
   final bool isReturnMode;
+  final StationAvailabilityLabel availabilityLabelForStation;
+  final StationSelectionRule canSelectStation;
 
   @override
   State<StationSearchSheet> createState() => _StationSearchSheetState();
@@ -100,8 +106,12 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                       separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (BuildContext context, int index) {
                         final Station station = results[index];
+                        final bool canSelect = widget.canSelectStation(station);
+                        final bool showNoDockHint =
+                            widget.isReturnMode && !canSelect;
                         return ListTile(
                           key: Key('search-result-${station.id}'),
+                          enabled: canSelect,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 4,
                             vertical: 2,
@@ -110,7 +120,7 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                             widget.isReturnMode
                                 ? Icons.keyboard_return_rounded
                                 : Icons.directions_bike_rounded,
-                            color: AppColors.slate,
+                            color: canSelect ? AppColors.slate : AppColors.warning,
                           ),
                           title: Text(
                             station.name,
@@ -120,23 +130,31 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                             ),
                           ),
                           subtitle: Text(
-                            station.address,
-                            style: const TextStyle(
-                              color: AppColors.neutralText,
+                            showNoDockHint
+                                ? 'No docks available'
+                                : station.address,
+                            style: TextStyle(
+                              color: showNoDockHint
+                                  ? AppColors.warning
+                                  : AppColors.neutralText,
                               fontSize: 12,
                             ),
                           ),
                           trailing: Text(
-                            widget.isReturnMode
-                                ? '${station.freeDocks} Docks'
-                                : '${station.availableBikes} Bikes',
-                            style: const TextStyle(
-                              color: AppColors.slate,
+                            widget.isReturnMode && !canSelect
+                                ? 'Full / 0 Docks'
+                                : widget.availabilityLabelForStation(station),
+                            style: TextStyle(
+                              color: canSelect
+                                  ? AppColors.slate
+                                  : AppColors.warning,
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
                             ),
                           ),
-                          onTap: () => widget.onSelectStation(station.id),
+                          onTap: canSelect
+                              ? () => widget.onSelectStation(station.id)
+                              : null,
                         );
                       },
                     ),

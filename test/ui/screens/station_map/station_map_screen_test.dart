@@ -149,6 +149,37 @@ void main() {
     expect(find.text('P | 9 Free'), findsOneWidget);
   });
 
+  testWidgets('return bike action exits return mode from free dock popup', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('station-marker-capitole-square')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Return Bike Here'), findsOneWidget);
+    await tester.tap(find.text('Return Bike Here'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Find a station or destination...'), findsOneWidget);
+    expect(find.text('Ready to ride?'), findsOneWidget);
+    expect(find.text('4 Bikes'), findsOneWidget);
+    expect(find.text('3 Bikes'), findsNothing);
+    expect(find.text('P | 9 Free'), findsNothing);
+  });
+
   testWidgets('banner close dismisses banner but keeps return mode active', (
     WidgetTester tester,
   ) async {
@@ -172,9 +203,74 @@ void main() {
 
     expect(find.text('Returning Mode ON'), findsNothing);
     expect(find.text('Showing Free Docks nearby'), findsNothing);
-    expect(find.text('Find a station or destination...'), findsNothing);
+    expect(find.text('Find a station with free docks...'), findsOneWidget);
     expect(find.text('Ready to ride?'), findsNothing);
     expect(find.text('P | 9 Free'), findsOneWidget);
+    expect(find.byKey(const Key('mode-toggle-button')), findsNothing);
+  });
+
+  testWidgets('return mode search keeps full station unselectable', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('return-mode-banner-close')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Find a station with free docks...'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search station'), findsOneWidget);
+    expect(find.text('Full / 0 Docks'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('search-result-jean-jaures')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search station'), findsOneWidget);
+    expect(find.text('Destination Full'), findsNothing);
+  });
+
+  testWidgets('return mode search lists stations with free docks first', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('return-mode-banner-close')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Find a station with free docks...'));
+    await tester.pumpAndSettle();
+
+    final double carmesTop = tester
+        .getTopLeft(find.byKey(const Key('search-result-carmes')))
+        .dy;
+    final double jeanJauresTop = tester
+        .getTopLeft(find.byKey(const Key('search-result-jean-jaures')))
+        .dy;
+
+    expect(carmesTop, lessThan(jeanJauresTop));
   });
 
   testWidgets('shows eta chip for selected dock in return mode', (

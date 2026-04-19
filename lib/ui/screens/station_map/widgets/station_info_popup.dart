@@ -9,12 +9,14 @@ class StationInfoPopup extends StatelessWidget {
     required this.isReturnMode,
     required this.onClose,
     required this.onNavigate,
+    required this.onReturnBike,
   });
 
   final Station station;
   final bool isReturnMode;
   final VoidCallback onClose;
   final VoidCallback onNavigate;
+  final VoidCallback onReturnBike;
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +98,10 @@ class StationInfoPopup extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
-                  onPressed: onNavigate,
-                  child: const Text('Navigate Here'),
+                  onPressed: isReturnMode ? onReturnBike : onNavigate,
+                  child: Text(
+                    isReturnMode ? 'Return Bike Here' : 'Navigate Here',
+                  ),
                 ),
               ),
             ],

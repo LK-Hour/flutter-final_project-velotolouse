@@ -43,6 +43,14 @@ class StationMapScreen extends StatelessWidget {
               Navigator.of(context).pop(stationId);
             },
             isReturnMode: viewModel.isReturnMode,
+            availabilityLabelForStation:
+                viewModel.availabilityLabelForCurrentMode,
+            canSelectStation: (Station station) {
+              if (!viewModel.isReturnMode) {
+                return true;
+              }
+              return viewModel.hasAvailabilityForCurrentMode(station);
+            },
           ),
         );
       },
@@ -114,6 +122,23 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Navigating to ${station.name}...')));
   }
 
+  void _onReturnBikePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+    Station station,
+  ) {
+    final ReturnBikeResult result = viewModel.returnBikeToStation(station);
+    final String message = switch (result) {
+      ReturnBikeResult.success => 'Bike returned successfully.',
+      ReturnBikeResult.noActiveRide => 'No active ride to return.',
+      ReturnBikeResult.stationFull =>
+        'This station is full. Please choose another dock.',
+    };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final StationMapViewModel viewModel = context.watch<StationMapViewModel>();
@@ -177,7 +202,7 @@ class StationMapScreen extends StatelessWidget {
                           onClose: () => _onReturnModeBannerClose(viewModel),
                         ),
                       )
-                    else if (!viewModel.isReturnMode)
+                    else
                       Positioned(
                         left: 16,
                         right: 16,
@@ -186,15 +211,20 @@ class StationMapScreen extends StatelessWidget {
                           children: <Widget>[
                             Expanded(
                               child: StationMapSearchField(
+                                placeholderText: viewModel.isReturnMode
+                                    ? 'Find a station with free docks...'
+                                    : 'Find a station or destination...',
                                 onTap: () =>
                                     _onSearchTapped(context, viewModel),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            StationMapModeButton(
-                              isReturnMode: viewModel.isReturnMode,
-                              onTap: () => _onTopRightButtonTapped(context),
-                            ),
+                            if (!viewModel.isReturnMode) ...<Widget>[
+                              const SizedBox(width: 10),
+                              StationMapModeButton(
+                                isReturnMode: viewModel.isReturnMode,
+                                onTap: () => _onTopRightButtonTapped(context),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -230,6 +260,11 @@ class StationMapScreen extends StatelessWidget {
                                 onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
+                                  selectedStation,
+                                ),
+                                onReturnBike: () => _onReturnBikePressed(
+                                  context,
+                                  viewModel,
                                   selectedStation,
                                 ),
                               ),

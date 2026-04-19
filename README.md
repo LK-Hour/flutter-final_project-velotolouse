@@ -43,6 +43,13 @@ Implemented behaviors include:
 - Selecting station markers and opening station detail popup
 - Switching to return mode after scan-based bike unlock (debug toggle kept for testing)
 - Showing dock availability based on active mode
+- Returning bike at a selected station with free docks (exits return mode)
+- Updating station availability immediately after successful return
+- Marking full stations in return search and preventing invalid selection
+- Showing a clear "No docks available" hint for disabled return-search stations
+- Keeping station search available in return mode once the banner is dismissed
+- Using return-mode specific search prompt: "Find a station with free docks..."
+- Sorting return search results to show stations with free docks first
 - Suggesting alternative stations when selected return station has no free docks
 - Bottom action area with ride/profile + scan button
 
