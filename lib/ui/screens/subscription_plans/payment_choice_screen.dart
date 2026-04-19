@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'instant_payment_screen.dart';
+import 'passes/daily_pass_screen.dart';
 
 class PaymentChoiceScreen extends StatelessWidget {
   const PaymentChoiceScreen({super.key});
@@ -52,12 +53,19 @@ class PaymentChoiceScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 12),
-                  const PaymentOptionTile(
+                  PaymentOptionTile(
                     icon: Icons.calendar_month,
                     iconColor: Color(0xFF6BA4FF),
                     title: 'Subscription Plan',
                     subtitle: 'Daily, monthly or annual — save up to 45%.',
                     showChevron: true,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DailyPassScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
