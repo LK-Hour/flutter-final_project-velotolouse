@@ -6,6 +6,7 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,10 +21,35 @@ class StationMapScreen extends StatelessWidget {
     'carmes': Offset(0.64, 0.52),
   };
 
-  void _onSearchTapped(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Search is coming soon.')));
+  Future<void> _onSearchTapped(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) async {
+    final String? selectedStationId = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.baseSurfaceAlt,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return FractionallySizedBox(
+          heightFactor: 0.72,
+          child: StationSearchSheet(
+            onSearch: viewModel.searchStations,
+            onSelectStation: (String stationId) {
+              Navigator.of(context).pop(stationId);
+            },
+            isReturnMode: viewModel.isReturnMode,
+          ),
+        );
+      },
+    );
+
+    if (!context.mounted || selectedStationId == null) {
+      return;
+    }
+    viewModel.selectStation(selectedStationId);
   }
 
   void _onTopRightButtonTapped(BuildContext context) {
@@ -109,7 +135,7 @@ class StationMapScreen extends StatelessWidget {
                         children: <Widget>[
                           Expanded(
                             child: StationMapSearchField(
-                              onTap: () => _onSearchTapped(context),
+                              onTap: () => _onSearchTapped(context, viewModel),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -120,6 +146,12 @@ class StationMapScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (viewModel.isReturnMode)
+                      const Positioned(
+                        left: 16,
+                        top: 72,
+                        child: _ReturnModeBadge(),
+                      ),
                     const Positioned(
                       right: 14,
                       top: 210,
@@ -169,6 +201,36 @@ class StationMapScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReturnModeBadge extends StatelessWidget {
+  const _ReturnModeBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x1A11B982),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.verified_rounded, color: AppColors.success, size: 14),
+          SizedBox(width: 6),
+          Text(
+            'SMART RETURN MODE ACTIVE',
+            style: TextStyle(
+              color: AppColors.success,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }

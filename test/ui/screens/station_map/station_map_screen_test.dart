@@ -58,6 +58,42 @@ void main() {
     expect(find.text('Navigate Here'), findsOneWidget);
   });
 
+  testWidgets('search sheet filters and selects a station', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Find a station or destination...'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search station'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('station-search-input')),
+      'jean',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('search-result-jean-jaures')), findsOneWidget);
+    expect(find.byKey(const Key('search-result-capitole-square')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('search-result-jean-jaures')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jean Jaures'), findsWidgets);
+    expect(find.text('Jean Jaures, 31000 Toulouse'), findsOneWidget);
+  });
+
   testWidgets('switches map mode for testing when mode button is tapped', (
     WidgetTester tester,
   ) async {

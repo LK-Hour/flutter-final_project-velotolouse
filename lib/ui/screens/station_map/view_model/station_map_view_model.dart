@@ -120,6 +120,19 @@ class StationMapViewModel extends ChangeNotifier {
         : '${station.availableBikes} Bikes';
   }
 
+  List<Station> searchStations(String query) {
+    final String normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) {
+      return stations;
+    }
+
+    return _stations.where((Station station) {
+      final String name = station.name.toLowerCase();
+      final String address = station.address.toLowerCase();
+      return name.contains(normalizedQuery) || address.contains(normalizedQuery);
+    }).toList(growable: false);
+  }
+
   Station? _findStationById(String id) {
     for (final Station station in _stations) {
       if (station.id == id) {
