@@ -96,12 +96,6 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _onLayerButtonPressed(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Map layers are coming soon.')),
-    );
-  }
-
   void _onNavigateHerePressed(BuildContext context, Station station) {
     ScaffoldMessenger.of(
       context,
@@ -183,11 +177,10 @@ class StationMapScreen extends StatelessWidget {
                     ),
                     Positioned(
                       right: 14,
-                      top: 210,
+                      bottom: 150,
                       child: StationMapQuickActions(
                         onLocateTap: () =>
                             _onLocateCurrentPositionPressed(context, viewModel),
-                        onLayersTap: () => _onLayerButtonPressed(context),
                       ),
                     ),
                     const Positioned(

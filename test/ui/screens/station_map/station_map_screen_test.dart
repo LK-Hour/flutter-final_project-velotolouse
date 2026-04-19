@@ -32,7 +32,7 @@ void main() {
     expect(find.text('Ready to ride?'), findsOneWidget);
     expect(find.byKey(const Key('scan-button')), findsOneWidget);
     expect(find.byIcon(Icons.gps_fixed_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.layers_outlined), findsNothing);
   });
 
   testWidgets('shows station info popup when marker is tapped', (
@@ -240,6 +240,31 @@ void main() {
     expect(viewModel.locateRequestVersion, 2);
     expect(viewModel.mapCenter.latitude, 43.6113);
     expect(viewModel.mapCenter.longitude, 1.4535);
+  });
+
+  testWidgets('locate quick action is placed at bottom-right area', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final Offset locateCenter = tester.getCenter(
+      find.byKey(const Key('quick-action-locate')),
+    );
+    final Size screenSize = tester.getSize(find.byType(Scaffold));
+
+    expect(locateCenter.dx, greaterThan(screenSize.width * 0.75));
+    expect(locateCenter.dy, greaterThan(screenSize.height * 0.65));
   });
 }
 

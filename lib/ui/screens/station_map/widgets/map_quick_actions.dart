@@ -2,31 +2,16 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class StationMapQuickActions extends StatelessWidget {
-  const StationMapQuickActions({
-    super.key,
-    this.onLocateTap,
-    this.onLayersTap,
-  });
+  const StationMapQuickActions({super.key, this.onLocateTap});
 
   final VoidCallback? onLocateTap;
-  final VoidCallback? onLayersTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        _StationMapRoundAction(
-          actionKey: const Key('quick-action-locate'),
-          icon: Icons.gps_fixed_rounded,
-          onTap: onLocateTap,
-        ),
-        const SizedBox(height: 10),
-        _StationMapRoundAction(
-          actionKey: const Key('quick-action-layers'),
-          icon: Icons.layers_outlined,
-          onTap: onLayersTap,
-        ),
-      ],
+    return _StationMapRoundAction(
+      actionKey: const Key('quick-action-locate'),
+      icon: Icons.gps_fixed_rounded,
+      onTap: onLocateTap,
     );
   }
 }

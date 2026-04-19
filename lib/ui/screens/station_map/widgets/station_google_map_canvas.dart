@@ -94,6 +94,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       compassEnabled: false,
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
+      mapType: gmaps.MapType.normal,
       onMapCreated: (gmaps.GoogleMapController controller) {
         _googleMapController = controller;
         _moveMapViewToCenter();
