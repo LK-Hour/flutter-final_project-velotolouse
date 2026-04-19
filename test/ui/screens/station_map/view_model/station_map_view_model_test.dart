@@ -57,6 +57,27 @@ void main() {
       expect(viewModel.isReturnMode, isFalse);
     });
 
+    test(
+      'suggests nearest dock and reroutes when selected return station is full',
+      () async {
+        final StationMapViewModel viewModel = StationMapViewModel(
+          repository: _RerouteStationRepository(),
+        );
+
+        await viewModel.loadStations();
+        viewModel.setHasActiveRide(true);
+        viewModel.selectStation('full-station');
+
+        expect(viewModel.showFullStationRerouteAlert, isTrue);
+        expect(viewModel.suggestedAlternativeDockStation, isNotNull);
+        expect(viewModel.suggestedAlternativeDockStation!.id, 'near-open');
+
+        viewModel.rerouteToSuggestedDock();
+        expect(viewModel.selectedStation?.id, 'near-open');
+        expect(viewModel.showFullStationRerouteAlert, isFalse);
+      },
+    );
+
     test('exposes an error message when repository fails', () async {
       final StationMapViewModel viewModel = StationMapViewModel(
         repository: _FailingStationRepository(),
@@ -92,5 +113,40 @@ class _FailingStationRepository implements StationRepository {
   @override
   Future<List<Station>> fetchStations() async {
     throw Exception('Network failed');
+  }
+}
+
+class _RerouteStationRepository implements StationRepository {
+  @override
+  Future<List<Station>> fetchStations() async {
+    return const <Station>[
+      Station(
+        id: 'full-station',
+        name: 'Full Station',
+        address: 'Address F',
+        availableBikes: 6,
+        totalCapacity: 6,
+        latitude: 43.6061,
+        longitude: 1.4492,
+      ),
+      Station(
+        id: 'near-open',
+        name: 'Near Open',
+        address: 'Address N',
+        availableBikes: 2,
+        totalCapacity: 10,
+        latitude: 43.6059,
+        longitude: 1.4486,
+      ),
+      Station(
+        id: 'far-open',
+        name: 'Far Open',
+        address: 'Address R',
+        availableBikes: 1,
+        totalCapacity: 9,
+        latitude: 43.5994,
+        longitude: 1.4449,
+      ),
+    ];
   }
 }

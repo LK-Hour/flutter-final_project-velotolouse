@@ -5,6 +5,7 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_qui
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_marker.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -170,13 +171,23 @@ class StationMapScreen extends StatelessWidget {
                         left: 16,
                         right: 16,
                         bottom: 122,
-                        child: StationInfoPopup(
-                          station: selectedStation,
-                          isReturnMode: viewModel.isReturnMode,
-                          onClose: viewModel.clearSelectedStation,
-                          onNavigate: () =>
-                              _onNavigateHerePressed(context, selectedStation),
-                        ),
+                        child: viewModel.showFullStationRerouteAlert
+                            ? StationRerouteAlert(
+                                selectedStation: selectedStation,
+                                suggestedStation:
+                                    viewModel.suggestedAlternativeDockStation,
+                                onReroute: viewModel.rerouteToSuggestedDock,
+                                onClose: viewModel.clearSelectedStation,
+                              )
+                            : StationInfoPopup(
+                                station: selectedStation,
+                                isReturnMode: viewModel.isReturnMode,
+                                onClose: viewModel.clearSelectedStation,
+                                onNavigate: () => _onNavigateHerePressed(
+                                  context,
+                                  selectedStation,
+                                ),
+                              ),
                       ),
                   ],
                 ),

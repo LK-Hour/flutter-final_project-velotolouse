@@ -21,7 +21,7 @@ class MockStationRepository implements StationRepository {
         name: 'Jean Jaures',
         address: 'Jean Jaures, 31000 Toulouse',
         availableBikes: 5,
-        totalCapacity: 14,
+        totalCapacity: 5,
         latitude: 43.6061,
         longitude: 1.4492,
       ),

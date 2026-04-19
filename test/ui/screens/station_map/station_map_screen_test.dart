@@ -77,8 +77,40 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SMART RETURN MODE ACTIVE'), findsOneWidget);
-    expect(find.text('9 Docks'), findsNWidgets(2));
+    expect(find.text('9 Docks'), findsOneWidget);
+    expect(find.text('0 Docks'), findsOneWidget);
     expect(find.text('8 Docks'), findsOneWidget);
+  });
+
+  testWidgets('shows reroute alert for full dock station in return mode', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mode-toggle-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('station-marker-jean-jaures')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Destination Full'), findsOneWidget);
+    expect(find.text('SUGGESTED ALTERNATIVE'), findsOneWidget);
+    expect(find.text('Reroute to Free Dock'), findsOneWidget);
+
+    await tester.tap(find.text('Reroute to Free Dock'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Destination Full'), findsNothing);
+    expect(find.text('Capitole Square'), findsWidgets);
   });
 
   testWidgets('keeps bottom nav buttons aligned around scan button', (

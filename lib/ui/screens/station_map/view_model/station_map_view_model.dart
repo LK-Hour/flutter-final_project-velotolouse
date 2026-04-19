@@ -20,6 +20,35 @@ class StationMapViewModel extends ChangeNotifier {
   Station? get selectedStation => _selectedStation;
   bool get hasActiveRide => _hasActiveRide;
   bool get isReturnMode => _hasActiveRide;
+  bool get showFullStationRerouteAlert {
+    return isReturnMode &&
+        _selectedStation != null &&
+        _selectedStation!.freeDocks == 0;
+  }
+
+  Station? get suggestedAlternativeDockStation {
+    if (!showFullStationRerouteAlert) {
+      return null;
+    }
+
+    final Station selected = _selectedStation!;
+    Station? nearestStation;
+    double? nearestDistance;
+
+    for (final Station station in _stations) {
+      if (station.id == selected.id || station.freeDocks <= 0) {
+        continue;
+      }
+
+      final double distance = _distanceSquared(selected, station);
+      if (nearestStation == null || distance < nearestDistance!) {
+        nearestStation = station;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearestStation;
+  }
 
   Future<void> loadStations() async {
     _isLoading = true;
@@ -72,6 +101,15 @@ class StationMapViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void rerouteToSuggestedDock() {
+    final Station? suggestion = suggestedAlternativeDockStation;
+    if (suggestion == null) {
+      return;
+    }
+    _selectedStation = suggestion;
+    notifyListeners();
+  }
+
   bool hasAvailabilityForCurrentMode(Station station) {
     return isReturnMode ? station.freeDocks > 0 : station.availableBikes > 0;
   }
@@ -89,5 +127,11 @@ class StationMapViewModel extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  double _distanceSquared(Station a, Station b) {
+    final double latDiff = a.latitude - b.latitude;
+    final double lngDiff = a.longitude - b.longitude;
+    return (latDiff * latDiff) + (lngDiff * lngDiff);
   }
 }
