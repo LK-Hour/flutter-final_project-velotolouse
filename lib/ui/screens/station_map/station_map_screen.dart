@@ -79,6 +79,10 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _onReturnModeBannerClose(StationMapViewModel viewModel) {
+    viewModel.dismissReturnModeBanner();
+  }
+
   Future<void> _onLocateCurrentPositionPressed(
     BuildContext context,
     StationMapViewModel viewModel,
@@ -164,14 +168,16 @@ class StationMapScreen extends StatelessWidget {
                           onStationTap: viewModel.selectStation,
                         ),
                       ),
-                    if (viewModel.isReturnMode)
-                      const Positioned(
+                    if (viewModel.showReturnModeBanner)
+                      Positioned(
                         left: 0,
                         right: 0,
                         top: 0,
-                        child: ReturnModeBanner(),
+                        child: ReturnModeBanner(
+                          onClose: () => _onReturnModeBannerClose(viewModel),
+                        ),
                       )
-                    else
+                    else if (!viewModel.isReturnMode)
                       Positioned(
                         left: 16,
                         right: 16,
@@ -180,7 +186,8 @@ class StationMapScreen extends StatelessWidget {
                           children: <Widget>[
                             Expanded(
                               child: StationMapSearchField(
-                                onTap: () => _onSearchTapped(context, viewModel),
+                                onTap: () =>
+                                    _onSearchTapped(context, viewModel),
                               ),
                             ),
                             const SizedBox(width: 10),

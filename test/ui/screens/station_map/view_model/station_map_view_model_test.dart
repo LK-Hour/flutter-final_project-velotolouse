@@ -76,6 +76,38 @@ void main() {
       expect(viewModel.hasActiveRide, isTrue);
     });
 
+    test('dismisses return banner without ending active ride', () {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+      );
+
+      viewModel.activateRideFromScan();
+      expect(viewModel.isReturnMode, isTrue);
+      expect(viewModel.showReturnModeBanner, isTrue);
+
+      expect(viewModel.dismissReturnModeBanner(), isTrue);
+      expect(viewModel.showReturnModeBanner, isFalse);
+      expect(viewModel.isReturnMode, isTrue);
+      expect(viewModel.hasActiveRide, isTrue);
+    });
+
+    test('ends active ride only when explicitly requested', () {
+      final StationMapViewModel viewModel = StationMapViewModel(
+        repository: _SuccessStationRepository(),
+      );
+
+      expect(viewModel.hasActiveRide, isFalse);
+      expect(viewModel.endActiveRide(), isFalse);
+
+      viewModel.activateRideFromScan();
+      expect(viewModel.hasActiveRide, isTrue);
+      expect(viewModel.isReturnMode, isTrue);
+
+      expect(viewModel.endActiveRide(), isTrue);
+      expect(viewModel.hasActiveRide, isFalse);
+      expect(viewModel.isReturnMode, isFalse);
+    });
+
     test(
       'suggests nearest dock and reroutes when selected return station is full',
       () async {

@@ -142,7 +142,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Bike unlocked. Return mode activated.'), findsOneWidget);
-    expect(find.text('Returning mode ON'), findsOneWidget);
+    expect(find.text('Returning Mode ON'), findsOneWidget);
+    expect(find.text('Showing Free Docks nearby'), findsOneWidget);
+    expect(find.text('Find a station or destination...'), findsNothing);
+    expect(find.text('Returning mode ON'), findsNothing);
+    expect(find.text('P | 9 Free'), findsOneWidget);
+  });
+
+  testWidgets('banner close dismisses banner but keeps return mode active', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('return-mode-banner-close')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Returning Mode ON'), findsNothing);
+    expect(find.text('Showing Free Docks nearby'), findsNothing);
+    expect(find.text('Find a station or destination...'), findsNothing);
+    expect(find.text('Ready to ride?'), findsNothing);
     expect(find.text('P | 9 Free'), findsOneWidget);
   });
 

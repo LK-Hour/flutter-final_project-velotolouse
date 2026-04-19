@@ -30,20 +30,21 @@ class BottomRidePanel extends StatelessWidget {
             right: 0,
             child: Center(child: _PanelHandle()),
           ),
-          Positioned(
-            top: 22,
-            left: 20,
-            bottom: 18,
-            child: Text(
-              isReturnMode ? 'Returning mode ON' : 'Ready to ride?',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
+          if (!isReturnMode)
+            const Positioned(
+              top: 22,
+              left: 20,
+              bottom: 18,
+              child: Text(
+                'Ready to ride?',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                ),
               ),
             ),
-          ),
-          if (selectedStationName != null)
+          if (!isReturnMode && selectedStationName != null)
             Positioned(
               top: 46,
               left: 20,

@@ -25,6 +25,7 @@ class StationMapViewModel extends ChangeNotifier {
   List<Station> _stations = <Station>[];
   Station? _selectedStation;
   bool _hasActiveRide = false;
+  bool _isReturnBannerVisible = true;
   GeoCoordinate _mapCenter = defaultMapCenter;
   GeoCoordinate? _currentUserLocation;
   int _locateRequestVersion = 0;
@@ -35,6 +36,7 @@ class StationMapViewModel extends ChangeNotifier {
   Station? get selectedStation => _selectedStation;
   bool get hasActiveRide => _hasActiveRide;
   bool get isReturnMode => _hasActiveRide;
+  bool get showReturnModeBanner => isReturnMode && _isReturnBannerVisible;
   GeoCoordinate get mapCenter => _mapCenter;
   GeoCoordinate? get currentUserLocation => _currentUserLocation;
   int get locateRequestVersion => _locateRequestVersion;
@@ -108,8 +110,7 @@ class StationMapViewModel extends ChangeNotifier {
     if (_hasActiveRide == value) {
       return;
     }
-    _hasActiveRide = value;
-    _selectedStation = null;
+    _applyRideState(isActive: value);
     notifyListeners();
   }
 
@@ -117,15 +118,31 @@ class StationMapViewModel extends ChangeNotifier {
     if (_hasActiveRide) {
       return false;
     }
-    _hasActiveRide = true;
-    _selectedStation = null;
+    _applyRideState(isActive: true);
+    notifyListeners();
+    return true;
+  }
+
+  bool endActiveRide() {
+    if (!_hasActiveRide) {
+      return false;
+    }
+    _applyRideState(isActive: false);
+    notifyListeners();
+    return true;
+  }
+
+  bool dismissReturnModeBanner() {
+    if (!showReturnModeBanner) {
+      return false;
+    }
+    _isReturnBannerVisible = false;
     notifyListeners();
     return true;
   }
 
   void toggleReturnModeForTesting() {
-    _hasActiveRide = !_hasActiveRide;
-    _selectedStation = null;
+    _applyRideState(isActive: !_hasActiveRide);
     notifyListeners();
   }
 
@@ -192,6 +209,12 @@ class StationMapViewModel extends ChangeNotifier {
     final double latDiff = a.latitude - b.latitude;
     final double lngDiff = a.longitude - b.longitude;
     return (latDiff * latDiff) + (lngDiff * lngDiff);
+  }
+
+  void _applyRideState({required bool isActive}) {
+    _hasActiveRide = isActive;
+    _selectedStation = null;
+    _isReturnBannerVisible = isActive;
   }
 }
 

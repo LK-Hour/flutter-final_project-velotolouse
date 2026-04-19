@@ -2,7 +2,9 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class ReturnModeBanner extends StatelessWidget {
-  const ReturnModeBanner({super.key});
+  const ReturnModeBanner({super.key, this.onClose});
+
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +24,15 @@ class ReturnModeBanner extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: <Widget>[
-          Icon(Icons.directions_bike_rounded, color: Colors.white, size: 18),
-          SizedBox(width: 8),
-          Expanded(
+          const Icon(
+            Icons.directions_bike_rounded,
+            color: Colors.white,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -52,7 +58,17 @@ class ReturnModeBanner extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.close_rounded, color: Colors.white, size: 20),
+          IconButton(
+            key: const Key('return-mode-banner-close'),
+            onPressed: onClose,
+            splashRadius: 18,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(
+              Icons.close_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
         ],
       ),
     );
