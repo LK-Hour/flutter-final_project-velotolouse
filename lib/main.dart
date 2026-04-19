@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'ui/subscription_plans/screens/payment_choice_screen.dart';
+import 'ui/screens/subscription_plans/payment_choice_screen.dart';
 
 void main() {
   runApp(const MyApp());
