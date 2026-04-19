@@ -3,8 +3,8 @@ import 'package:final_project_velotolouse/ui/screens/station_map/view_model/stat
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_marker.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
@@ -65,31 +65,6 @@ class StationMapScreen extends StatelessWidget {
                 color: AppColors.mapBackground,
                 child: Stack(
                   children: <Widget>[
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      top: 12,
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: StationMapSearchField(
-                              onTap: () => _onSearchTapped(context),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          StationMapModeButton(
-                            isReturnMode: viewModel.isReturnMode,
-                            onTap: () => _onTopRightButtonTapped(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (viewModel.isReturnMode)
-                      const Positioned(
-                        left: 16,
-                        top: 72,
-                        child: _ReturnModeBadge(),
-                      ),
                     if (viewModel.isLoading)
                       const Center(child: CircularProgressIndicator())
                     else if (viewModel.errorMessage != null)
@@ -118,44 +93,33 @@ class StationMapScreen extends StatelessWidget {
                       )
                     else
                       Positioned.fill(
-                        child: LayoutBuilder(
-                          builder:
-                              (
-                                BuildContext context,
-                                BoxConstraints constraints,
-                              ) {
-                                return Stack(
-                                  children: <Widget>[
-                                    for (final Station station
-                                        in viewModel.stations)
-                                      StationMarkerWidget(
-                                        key: Key(
-                                          'station-marker-${station.id}',
-                                        ),
-                                        label: viewModel
-                                            .availabilityLabelForCurrentMode(
-                                              station,
-                                            ),
-                                        isAvailableInCurrentMode: viewModel
-                                            .hasAvailabilityForCurrentMode(
-                                              station,
-                                            ),
-                                        isReturnMode: viewModel.isReturnMode,
-                                        isSelected:
-                                            station.id == selectedStation?.id,
-                                        mapPosition:
-                                            _markerMapPosition[station.id] ??
-                                            const Offset(0.5, 0.5),
-                                        width: constraints.maxWidth,
-                                        height: constraints.maxHeight,
-                                        onTap: () =>
-                                            viewModel.selectStation(station.id),
-                                      ),
-                                  ],
-                                );
-                              },
+                        child: StationGoogleMapCanvas(
+                          stations: viewModel.stations,
+                          isReturnMode: viewModel.isReturnMode,
+                          selectedStation: selectedStation,
+                          fallbackMarkerPositions: _markerMapPosition,
+                          onStationTap: viewModel.selectStation,
                         ),
                       ),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      top: 12,
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: StationMapSearchField(
+                              onTap: () => _onSearchTapped(context),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          StationMapModeButton(
+                            isReturnMode: viewModel.isReturnMode,
+                            onTap: () => _onTopRightButtonTapped(context),
+                          ),
+                        ],
+                      ),
+                    ),
                     const Positioned(
                       right: 14,
                       top: 210,
@@ -205,36 +169,6 @@ class StationMapScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ReturnModeBadge extends StatelessWidget {
-  const _ReturnModeBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0x1A11B982),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(Icons.verified_rounded, color: AppColors.success, size: 14),
-          SizedBox(width: 6),
-          Text(
-            'SMART RETURN MODE ACTIVE',
-            style: TextStyle(
-              color: AppColors.success,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-            ),
-          ),
-        ],
       ),
     );
   }
