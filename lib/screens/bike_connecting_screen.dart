@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
 import 'package:flutter/material.dart';
 import '../themes/theme.dart';
 
@@ -335,29 +336,25 @@ class _UnlockSuccessScreen extends StatefulWidget {
 }
 
 class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
-  int _elapsedSeconds = 0;
-  Timer? _timer;
+  late final RideTimerController _rideTimer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _elapsedSeconds++);
+    _rideTimer = RideTimerController()..start();
+    // Rebuild the UI on every timer tick.
+    _rideTimer.addListener(() {
+      if (mounted) setState(() {});
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _rideTimer.dispose();
     super.dispose();
   }
 
-  String get _formattedTime {
-    final hours = _elapsedSeconds ~/ 3600;
-    final minutes = (_elapsedSeconds % 3600) ~/ 60;
-    final seconds = _elapsedSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+  String get _formattedTime => _rideTimer.formattedTime;
 
   @override
   Widget build(BuildContext context) {
