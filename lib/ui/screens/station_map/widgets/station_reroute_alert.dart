@@ -2,6 +2,8 @@ import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
+typedef SuggestionLabelBuilder = String Function(Station station);
+
 class StationRerouteAlert extends StatelessWidget {
   const StationRerouteAlert({
     super.key,
@@ -9,12 +11,22 @@ class StationRerouteAlert extends StatelessWidget {
     required this.suggestedStation,
     required this.onReroute,
     required this.onClose,
+    this.title = 'Destination Full',
+    this.description,
+    this.noSuggestionMessage = 'No nearby station with free docks found.',
+    this.suggestionLabelBuilder,
+    this.rerouteButtonText = 'Reroute to Free Dock',
   });
 
   final Station selectedStation;
   final Station? suggestedStation;
   final VoidCallback onReroute;
   final VoidCallback onClose;
+  final String title;
+  final String? description;
+  final String noSuggestionMessage;
+  final SuggestionLabelBuilder? suggestionLabelBuilder;
+  final String rerouteButtonText;
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +48,14 @@ class StationRerouteAlert extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text(
-                  'Destination Full',
-                  style: TextStyle(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
                   ),
                 ),
               ),
@@ -59,7 +71,8 @@ class StationRerouteAlert extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Your selected station ${selectedStation.name} has no available docks.',
+            description ??
+                'Your selected station ${selectedStation.name} has no available docks.',
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
@@ -78,8 +91,8 @@ class StationRerouteAlert extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (suggestedStation == null)
-            const Text(
-              'No nearby station with free docks found.',
+            Text(
+              noSuggestionMessage,
               style: TextStyle(
                 color: AppColors.neutralText,
                 fontWeight: FontWeight.w500,
@@ -104,7 +117,8 @@ class StationRerouteAlert extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${suggestedStation!.freeDocks} spots open',
+                        suggestionLabelBuilder?.call(suggestedStation!) ??
+                            '${suggestedStation!.freeDocks} spots open',
                         style: const TextStyle(
                           color: AppColors.neutralText,
                           fontWeight: FontWeight.w600,
@@ -121,7 +135,7 @@ class StationRerouteAlert extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: suggestedStation == null ? null : onReroute,
-              child: const Text('Reroute to Free Dock'),
+              child: Text(rerouteButtonText),
             ),
           ),
         ],

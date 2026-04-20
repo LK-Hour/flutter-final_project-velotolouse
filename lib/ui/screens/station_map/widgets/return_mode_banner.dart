@@ -48,7 +48,7 @@ class ReturnModeBanner extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Showing Free Docks nearby',
+                  'Free Docks nearby',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,

@@ -18,9 +18,9 @@ class StationMapScreen extends StatelessWidget {
   const StationMapScreen({super.key});
 
   static const Map<String, Offset> _markerMapPosition = <String, Offset>{
-    'capitole-square': Offset(0.34, 0.24),
-    'jean-jaures': Offset(0.24, 0.55),
-    'carmes': Offset(0.64, 0.52),
+    'wat-phnom': Offset(0.34, 0.24),
+    'central-market': Offset(0.24, 0.55),
+    'independence-monument': Offset(0.64, 0.52),
   };
 
   Future<void> _onSearchTapped(
@@ -45,12 +45,7 @@ class StationMapScreen extends StatelessWidget {
             isReturnMode: viewModel.isReturnMode,
             availabilityLabelForStation:
                 viewModel.availabilityLabelForCurrentMode,
-            canSelectStation: (Station station) {
-              if (!viewModel.isReturnMode) {
-                return true;
-              }
-              return viewModel.hasAvailabilityForCurrentMode(station);
-            },
+            canSelectStation: viewModel.hasAvailabilityForCurrentMode,
           ),
         );
       },
@@ -116,10 +111,32 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _onNavigateHerePressed(BuildContext context, Station station) {
+  Future<void> _onNavigateHerePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+    Station station,
+  ) async {
+    final UserLocationStatus status = await viewModel.showRouteToStation(
+      station,
+    );
+    if (!context.mounted || status == UserLocationStatus.located) {
+      return;
+    }
+
+    final String message = switch (status) {
+      UserLocationStatus.permissionDenied =>
+        'Location permission denied. Please allow GPS access.',
+      UserLocationStatus.permissionDeniedForever =>
+        'Location permission denied permanently. Enable it in settings.',
+      UserLocationStatus.serviceDisabled =>
+        'GPS is off. Please enable location services.',
+      UserLocationStatus.unavailable => 'Unable to get your current location.',
+      UserLocationStatus.located => '',
+    };
+
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Navigating to ${station.name}...')));
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _onReturnBikePressed(
@@ -137,6 +154,34 @@ class StationMapScreen extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _onRerouteToDockPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    final Station? suggestion = viewModel.suggestedAlternativeDockStation;
+    viewModel.rerouteToSuggestedDock();
+    if (suggestion == null) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
+  }
+
+  void _onRerouteToBikePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    final Station? suggestion = viewModel.suggestedAlternativeBikeStation;
+    viewModel.rerouteToSuggestedBikeStation();
+    if (suggestion == null) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
   @override
@@ -188,6 +233,7 @@ class StationMapScreen extends StatelessWidget {
                           selectedStation: selectedStation,
                           mapCenter: viewModel.mapCenter,
                           currentUserLocation: viewModel.currentUserLocation,
+                          routePath: viewModel.activeRoutePath,
                           locateRequestVersion: viewModel.locateRequestVersion,
                           fallbackMarkerPositions: _markerMapPosition,
                           onStationTap: viewModel.selectStation,
@@ -251,8 +297,26 @@ class StationMapScreen extends StatelessWidget {
                                 selectedStation: selectedStation,
                                 suggestedStation:
                                     viewModel.suggestedAlternativeDockStation,
-                                onReroute: viewModel.rerouteToSuggestedDock,
+                                onReroute: () =>
+                                    _onRerouteToDockPressed(context, viewModel),
                                 onClose: viewModel.clearSelectedStation,
+                              )
+                            : viewModel.showEmptyStationRerouteAlert
+                            ? StationRerouteAlert(
+                                selectedStation: selectedStation,
+                                suggestedStation:
+                                    viewModel.suggestedAlternativeBikeStation,
+                                onReroute: () =>
+                                    _onRerouteToBikePressed(context, viewModel),
+                                onClose: viewModel.clearSelectedStation,
+                                title: 'No Bikes Available',
+                                description:
+                                    'Your selected station ${selectedStation.name} has no available bikes.',
+                                noSuggestionMessage:
+                                    'No nearby station with bikes found.',
+                                suggestionLabelBuilder: (Station station) =>
+                                    '${station.availableBikes} bikes ready',
+                                rerouteButtonText: 'Reroute to Available Bike',
                               )
                             : StationInfoPopup(
                                 station: selectedStation,
@@ -260,6 +324,7 @@ class StationMapScreen extends StatelessWidget {
                                 onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
+                                  viewModel,
                                   selectedStation,
                                 ),
                                 onReturnBike: () => _onReturnBikePressed(

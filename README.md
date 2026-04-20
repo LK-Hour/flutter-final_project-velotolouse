@@ -50,7 +50,14 @@ Implemented behaviors include:
 - Keeping station search available in return mode once the banner is dismissed
 - Using return-mode specific search prompt: "Find a station with free docks..."
 - Sorting return search results to show stations with free docks first
+- Showing return-mode empty state: "No station with free docks found"
+- Marking empty-bike stations in renting search and preventing invalid selection
+- Showing a clear "No bikes available" hint for disabled renting-search stations
+- Sorting renting search results to show stations with bikes first
+- Suggesting nearest bike station when selected renting station has no bikes
 - Suggesting alternative stations when selected return station has no free docks
+- Showing reroute confirmation feedback after auto-selecting suggested station
+- Showing a return-mode bottom status label: "Return in progress"
 - Bottom action area with ride/profile + scan button
 
 ## Run the Project
@@ -78,4 +85,5 @@ This helps test responsive layouts quickly across multiple virtual devices.
 ## Notes
 
 - Current design assets available in this repo are centered on **User Story 2**.
+- Mock station data is currently configured around **Phnom Penh, Cambodia**.
 - Work is being delivered incrementally with small, reviewable steps.

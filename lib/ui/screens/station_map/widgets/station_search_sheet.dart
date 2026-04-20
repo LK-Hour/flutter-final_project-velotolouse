@@ -32,6 +32,9 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
   @override
   Widget build(BuildContext context) {
     final List<Station> results = widget.onSearch(_query);
+    final String emptyMessage = widget.isReturnMode
+        ? 'No station with free docks found'
+        : 'No station found';
 
     return SafeArea(
       top: false,
@@ -91,12 +94,12 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
             const SizedBox(height: 12),
             Flexible(
               child: results.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Text(
-                          'No station found',
-                          style: TextStyle(color: AppColors.neutralText),
+                          emptyMessage,
+                          style: const TextStyle(color: AppColors.neutralText),
                         ),
                       ),
                     )
@@ -107,8 +110,7 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                       itemBuilder: (BuildContext context, int index) {
                         final Station station = results[index];
                         final bool canSelect = widget.canSelectStation(station);
-                        final bool showNoDockHint =
-                            widget.isReturnMode && !canSelect;
+                        final bool showUnavailableHint = !canSelect;
                         return ListTile(
                           key: Key('search-result-${station.id}'),
                           enabled: canSelect,
@@ -130,11 +132,13 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                             ),
                           ),
                           subtitle: Text(
-                            showNoDockHint
-                                ? 'No docks available'
+                            showUnavailableHint
+                                ? widget.isReturnMode
+                                      ? 'No docks available'
+                                      : 'No bikes available'
                                 : station.address,
                             style: TextStyle(
-                              color: showNoDockHint
+                              color: showUnavailableHint
                                   ? AppColors.warning
                                   : AppColors.neutralText,
                               fontSize: 12,
@@ -143,6 +147,8 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                           trailing: Text(
                             widget.isReturnMode && !canSelect
                                 ? 'Full / 0 Docks'
+                                : !widget.isReturnMode && !canSelect
+                                ? 'Empty / 0 Bikes'
                                 : widget.availabilityLabelForStation(station),
                             style: TextStyle(
                               color: canSelect

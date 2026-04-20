@@ -1,6 +1,9 @@
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
+import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/routes/station_route_repository.dart';
 import 'package:final_project_velotolouse/data/repositories/stations/station_repository_mock.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/station_map_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
@@ -51,14 +54,50 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('station-marker-capitole-square')));
+    await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Capitole Square'), findsWidgets);
-    expect(find.text('Place du Capitole, 31000 Toulouse'), findsOneWidget);
+    expect(find.text('Wat Phnom'), findsWidgets);
+    expect(find.text('Street 94, Daun Penh, Phnom Penh'), findsOneWidget);
     expect(find.text('Available Bikes'), findsOneWidget);
     expect(find.text('Empty Slots'), findsOneWidget);
     expect(find.text('Navigate Here'), findsOneWidget);
+  });
+
+  testWidgets('navigate here draws route from user to selected station', (
+    WidgetTester tester,
+  ) async {
+    final _FakeStationRouteRepository routeRepository =
+        _FakeStationRouteRepository();
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+      userLocationRepository: _LocatedUserLocationRepository(),
+      stationRouteRepository: routeRepository,
+    )..loadStations();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Navigate Here'));
+    await tester.pumpAndSettle();
+
+    expect(viewModel.activeRoutePath.length, 3);
+    expect(viewModel.activeRoutePath.first.latitude, 11.5625);
+    expect(viewModel.activeRoutePath.first.longitude, 104.9160);
+    expect(viewModel.activeRoutePath[1].latitude, 11.5620);
+    expect(viewModel.activeRoutePath[1].longitude, 104.9140);
+    expect(viewModel.activeRoutePath.last.latitude, 11.559729);
+    expect(viewModel.activeRoutePath.last.longitude, 104.910392);
+    expect(routeRepository.calls, 1);
   });
 
   testWidgets('search sheet filters and selects a station', (
@@ -83,21 +122,24 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('station-search-input')),
-      'jean',
+      'market',
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('search-result-jean-jaures')), findsOneWidget);
     expect(
-      find.byKey(const Key('search-result-capitole-square')),
-      findsNothing,
+      find.byKey(const Key('search-result-central-market')),
+      findsOneWidget,
     );
+    expect(find.byKey(const Key('search-result-wat-phnom')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('search-result-jean-jaures')));
+    await tester.tap(find.byKey(const Key('search-result-central-market')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jean Jaures'), findsWidgets);
-    expect(find.text('Jean Jaures, 31000 Toulouse'), findsOneWidget);
+    expect(find.text('Central Market'), findsWidgets);
+    expect(
+      find.text('Phnom, Samdach Sang Neayok Srey St. (67), Penh 12209'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('switches map mode for testing when mode button is tapped', (
@@ -143,7 +185,8 @@ void main() {
 
     expect(find.text('Bike unlocked. Return mode activated.'), findsOneWidget);
     expect(find.text('Returning Mode ON'), findsOneWidget);
-    expect(find.text('Showing Free Docks nearby'), findsOneWidget);
+    expect(find.text('Free Docks nearby'), findsOneWidget);
+    expect(find.text('Return in progress'), findsOneWidget);
     expect(find.text('Find a station or destination...'), findsNothing);
     expect(find.text('Returning mode ON'), findsNothing);
     expect(find.text('P | 9 Free'), findsOneWidget);
@@ -166,7 +209,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('scan-button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('station-marker-capitole-square')));
+    await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
 
     expect(find.text('Return Bike Here'), findsOneWidget);
@@ -202,9 +245,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Returning Mode ON'), findsNothing);
-    expect(find.text('Showing Free Docks nearby'), findsNothing);
+    expect(find.text('Free Docks nearby'), findsNothing);
     expect(find.text('Find a station with free docks...'), findsOneWidget);
     expect(find.text('Ready to ride?'), findsNothing);
+    expect(find.text('Return in progress'), findsOneWidget);
     expect(find.text('P | 9 Free'), findsOneWidget);
     expect(find.byKey(const Key('mode-toggle-button')), findsNothing);
   });
@@ -234,7 +278,7 @@ void main() {
     expect(find.text('Search station'), findsOneWidget);
     expect(find.text('Full / 0 Docks'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('search-result-jean-jaures')));
+    await tester.tap(find.byKey(const Key('search-result-central-market')));
     await tester.pumpAndSettle();
 
     expect(find.text('Search station'), findsOneWidget);
@@ -264,10 +308,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final double carmesTop = tester
-        .getTopLeft(find.byKey(const Key('search-result-carmes')))
+        .getTopLeft(
+          find.byKey(const Key('search-result-independence-monument')),
+        )
         .dy;
     final double jeanJauresTop = tester
-        .getTopLeft(find.byKey(const Key('search-result-jean-jaures')))
+        .getTopLeft(find.byKey(const Key('search-result-central-market')))
         .dy;
 
     expect(carmesTop, lessThan(jeanJauresTop));
@@ -293,7 +339,9 @@ void main() {
 
     expect(find.text('2 min away'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('station-marker-carmes')));
+    await tester.tap(
+      find.byKey(const Key('station-marker-independence-monument')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('2 min away'), findsOneWidget);
@@ -302,12 +350,14 @@ void main() {
   testWidgets('shows reroute alert for full dock station in return mode', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
@@ -316,7 +366,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('station-marker-jean-jaures')));
+    await tester.tap(find.byKey(const Key('station-marker-central-market')));
     await tester.pumpAndSettle();
 
     expect(find.text('Destination Full'), findsOneWidget);
@@ -327,7 +377,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Destination Full'), findsNothing);
-    expect(find.text('Capitole Square'), findsWidgets);
+    expect(viewModel.selectedStation, isNotNull);
+    expect(viewModel.selectedStation!.freeDocks, greaterThan(0));
+  });
+
+  testWidgets('shows reroute alert for empty-bike station in renting mode', (
+    WidgetTester tester,
+  ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: _EmptyBikeStationRepository(),
+    )..loadStations();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('station-marker-central-market')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No Bikes Available'), findsOneWidget);
+    expect(find.text('Reroute to Available Bike'), findsOneWidget);
+
+    await tester.tap(find.text('Reroute to Available Bike'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No Bikes Available'), findsNothing);
+    expect(viewModel.selectedStation, isNotNull);
+    expect(viewModel.selectedStation!.availableBikes, greaterThan(0));
   });
 
   testWidgets('keeps bottom nav buttons aligned around scan button', (
@@ -414,8 +496,8 @@ void main() {
     );
     expect(locationRepository.calls, 2);
     expect(viewModel.locateRequestVersion, 2);
-    expect(viewModel.mapCenter.latitude, 43.6113);
-    expect(viewModel.mapCenter.longitude, 1.4535);
+    expect(viewModel.mapCenter.latitude, 11.5625);
+    expect(viewModel.mapCenter.longitude, 104.9160);
   });
 
   testWidgets('locate quick action is placed at bottom-right area', (
@@ -452,7 +534,59 @@ class _LocatedUserLocationRepository implements UserLocationRepository {
     calls += 1;
     return const UserLocationResult(
       status: UserLocationStatus.located,
-      coordinate: GeoCoordinate(latitude: 43.6113, longitude: 1.4535),
+      coordinate: GeoCoordinate(latitude: 11.5625, longitude: 104.9160),
     );
+  }
+}
+
+class _EmptyBikeStationRepository implements StationRepository {
+  @override
+  Future<List<Station>> fetchStations() async {
+    return const <Station>[
+      Station(
+        id: 'wat-phnom',
+        name: 'Wat Phnom',
+        address: 'Street 94, Daun Penh, Phnom Penh',
+        availableBikes: 3,
+        totalCapacity: 12,
+        latitude: 11.559729,
+        longitude: 104.910392,
+      ),
+      Station(
+        id: 'central-market',
+        name: 'Central Market',
+        address: 'Phnom, Samdach Sang Neayok Srey St. (67), Penh 12209',
+        availableBikes: 0,
+        totalCapacity: 5,
+        latitude: 11.5715,
+        longitude: 104.9176,
+      ),
+      Station(
+        id: 'independence-monument',
+        name: 'Independence Monument',
+        address: 'Preah Sihanouk Blvd, Chamkar Mon, Phnom Penh',
+        availableBikes: 8,
+        totalCapacity: 16,
+        latitude: 11.5564,
+        longitude: 104.9282,
+      ),
+    ];
+  }
+}
+
+class _FakeStationRouteRepository implements StationRouteRepository {
+  int calls = 0;
+
+  @override
+  Future<List<GeoCoordinate>> fetchCyclingRoute({
+    required GeoCoordinate origin,
+    required GeoCoordinate destination,
+  }) async {
+    calls += 1;
+    return <GeoCoordinate>[
+      origin,
+      const GeoCoordinate(latitude: 11.5620, longitude: 104.9140),
+      destination,
+    ];
   }
 }

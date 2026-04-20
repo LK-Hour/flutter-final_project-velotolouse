@@ -44,7 +44,34 @@ class BottomRidePanel extends StatelessWidget {
                 ),
               ),
             ),
+          if (isReturnMode)
+            const Positioned(
+              top: 22,
+              left: 20,
+              bottom: 18,
+              child: Text(
+                'Return in progress',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                ),
+              ),
+            ),
           if (!isReturnMode && selectedStationName != null)
+            Positioned(
+              top: 46,
+              left: 20,
+              child: Text(
+                selectedStationName!,
+                style: const TextStyle(
+                  color: AppColors.neutralText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          if (isReturnMode && selectedStationName != null)
             Positioned(
               top: 46,
               left: 20,

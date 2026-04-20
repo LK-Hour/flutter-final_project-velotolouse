@@ -16,6 +16,7 @@ class StationGoogleMapCanvas extends StatefulWidget {
     required this.selectedStation,
     required this.mapCenter,
     required this.currentUserLocation,
+    required this.routePath,
     required this.locateRequestVersion,
     required this.onStationTap,
     required this.fallbackMarkerPositions,
@@ -26,6 +27,7 @@ class StationGoogleMapCanvas extends StatefulWidget {
   final Station? selectedStation;
   final GeoCoordinate mapCenter;
   final GeoCoordinate? currentUserLocation;
+  final List<GeoCoordinate> routePath;
   final int locateRequestVersion;
   final ValueChanged<String> onStationTap;
   final Map<String, Offset> fallbackMarkerPositions;
@@ -100,6 +102,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
         _moveMapViewToCenter();
       },
       markers: _buildGoogleMarkers(),
+      polylines: _buildGoogleRoutePolylines(),
     );
   }
 
@@ -126,6 +129,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
           userAgentPackageName: 'com.cadt.velotoulouse',
         ),
         fmap.MarkerLayer(markers: _buildTileMapMarkers()),
+        fmap.PolylineLayer(polylines: _buildTileRoutePolylines()),
       ],
     );
   }
@@ -237,6 +241,27 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     return markers;
   }
 
+  Set<gmaps.Polyline> _buildGoogleRoutePolylines() {
+    if (widget.routePath.length < 2) {
+      return <gmaps.Polyline>{};
+    }
+
+    return <gmaps.Polyline>{
+      gmaps.Polyline(
+        polylineId: const gmaps.PolylineId('station-route'),
+        color: AppColors.warning,
+        width: 5,
+        geodesic: true,
+        points: widget.routePath
+            .map(
+              (GeoCoordinate point) =>
+                  gmaps.LatLng(point.latitude, point.longitude),
+            )
+            .toList(growable: false),
+      ),
+    };
+  }
+
   List<fmap.Marker> _buildTileMapMarkers() {
     final List<fmap.Marker> markers = widget.stations.map((Station station) {
       final bool isSelected = widget.selectedStation?.id == station.id;
@@ -285,6 +310,25 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     }
 
     return markers;
+  }
+
+  List<fmap.Polyline> _buildTileRoutePolylines() {
+    if (widget.routePath.length < 2) {
+      return const <fmap.Polyline>[];
+    }
+
+    return <fmap.Polyline>[
+      fmap.Polyline(
+        points: widget.routePath
+            .map(
+              (GeoCoordinate point) =>
+                  latlng.LatLng(point.latitude, point.longitude),
+            )
+            .toList(growable: false),
+        strokeWidth: 5,
+        color: AppColors.warning,
+      ),
+    ];
   }
 
   bool _hasAvailability(Station station) {
