@@ -141,10 +141,14 @@ class StationMapScreen extends StatelessWidget {
   }
 
   void _onViewStationPressed(BuildContext context, Station station) {
+    final viewModel = context.read<StationMapViewModel>();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const StationsScreen(),
+        builder: (context) => StationsScreen(
+          station: station,
+          allStations: viewModel.stations,
+        ),
       ),
     );
   }

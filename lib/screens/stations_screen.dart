@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../domain/model/stations/station.dart';
 import '../themes/theme.dart';
 import '../widgets/reusable_components.dart';
+import 'qr_scanner_screen.dart';
 
 /// Station View Screen with Google Maps and draggable bike slots list
 class StationsScreen extends StatefulWidget {
-  const StationsScreen({super.key});
+  const StationsScreen({super.key, this.station, this.allStations});
+
+  final Station? station;
+  final List<Station>? allStations;
 
   @override
   State<StationsScreen> createState() => _StationsScreenState();
@@ -14,9 +19,26 @@ class StationsScreen extends StatefulWidget {
 
 class _StationsScreenState extends State<StationsScreen> {
   // Capitole Square coordinates (Toulouse, France)
-  static const LatLng _stationLocation = LatLng(43.6047, 1.4442);
+  late LatLng _stationLocation;
+  late Station? currentStation;
+  int currentStationIndex = 0;
 
   final MapController _mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    currentStation = widget.station;
+    // Find current station index if allStations is provided
+    if (widget.allStations != null && widget.station != null) {
+      currentStationIndex = widget.allStations!.indexWhere((s) => s.id == widget.station!.id);
+      if (currentStationIndex == -1) currentStationIndex = 0;
+    }
+    // Use passed station location or default to Capitole Square
+    _stationLocation = currentStation != null
+        ? LatLng(currentStation!.latitude, currentStation!.longitude)
+        : const LatLng(43.6047, 1.4442);
+  }
 
   // Sheet drag state
   double _sheetHeight = 310;
@@ -70,6 +92,49 @@ class _StationsScreenState extends State<StationsScreen> {
     );
   }
 
+  void _switchToPreviousStation() {
+    if (widget.allStations == null || widget.allStations!.isEmpty) return;
+    setState(() {
+      currentStationIndex = (currentStationIndex - 1) % widget.allStations!.length;
+      if (currentStationIndex < 0) currentStationIndex = widget.allStations!.length - 1;
+      currentStation = widget.allStations![currentStationIndex];
+      _stationLocation = LatLng(currentStation!.latitude, currentStation!.longitude);
+      _mapController.move(_stationLocation, 15.5);
+    });
+  }
+
+  void _switchToNextStation() {
+    if (widget.allStations == null || widget.allStations!.isEmpty) return;
+    setState(() {
+      currentStationIndex = (currentStationIndex + 1) % widget.allStations!.length;
+      currentStation = widget.allStations![currentStationIndex];
+      _stationLocation = LatLng(currentStation!.latitude, currentStation!.longitude);
+      _mapController.move(_stationLocation, 15.5);
+    });
+  }
+
+  // Generate bike slots based on station data
+  List<bool> _generateBikeSlots() {
+    final totalCapacity = currentStation?.totalCapacity ?? 20;
+    final availableBikes = currentStation?.availableBikes ?? 5;
+    
+    // Create a list representing all slots
+    List<bool> slots = List.filled(totalCapacity, false);
+    
+    // Use station ID hash as seed for consistent "randomness" per station
+    final seed = currentStation?.id.hashCode ?? 0;
+    final random = seed.abs();
+    
+    // Distribute available bikes across slots
+    for (int i = 0; i < availableBikes && i < totalCapacity; i++) {
+      // Use a pattern based on the seed to determine which slots have bikes
+      int slotIndex = (i * 3 + random) % totalCapacity;
+      slots[slotIndex] = true;
+    }
+    
+    return slots;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,7 +143,7 @@ class _StationsScreenState extends State<StationsScreen> {
           // Bottom layer: OpenStreetMap (no API key needed)
           FlutterMap(
             mapController: _mapController,
-            options: const MapOptions(
+            options: MapOptions(
               initialCenter: _stationLocation,
               initialZoom: 15.5,
             ),
@@ -177,20 +242,59 @@ class _StationsScreenState extends State<StationsScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Plus button
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                          ),
-                        ],
+                    // Previous/Next station buttons or Plus button
+                    if (widget.allStations != null && widget.allStations!.length > 1) ...[
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_left, size: 24),
+                          onPressed: _switchToPreviousStation,
+                        ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_right, size: 24),
+                          onPressed: _switchToNextStation,
+                        ),
+                      ),
+                    ] else
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
                       child: IconButton(
                         icon: const Icon(Icons.add, size: 20),
                         onPressed: () {},
@@ -313,9 +417,9 @@ class _StationsScreenState extends State<StationsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Capitole Square', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                    Text(currentStation?.name ?? 'Capitole Square', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text('Place du Capitole, 31000 Toulouse', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                    Text(currentStation?.address ?? 'Place du Capitole, 31000 Toulouse', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                   ],
                 ),
               ),
@@ -337,7 +441,7 @@ class _StationsScreenState extends State<StationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('12', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.successGreen)),
+                      Text('${currentStation?.freeDocks ?? 12}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.successGreen)),
                       Text('Free Docks', style: TextStyle(color: Colors.grey[700], fontSize: 14)),
                     ],
                   ),
@@ -351,7 +455,7 @@ class _StationsScreenState extends State<StationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('20', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
+                      Text('${currentStation?.totalCapacity ?? 20}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
                       Text('Total Capacity', style: TextStyle(color: Colors.grey[700], fontSize: 14)),
                     ],
                   ),
@@ -366,28 +470,32 @@ class _StationsScreenState extends State<StationsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Bike Slots', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text('20 slots total', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+              Text('${currentStation?.totalCapacity ?? 20} slots total', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Bike slots
-          _BikeSlotItem(slotNumber: 1, isAvailable: true),
-          _BikeSlotItem(slotNumber: 2, isAvailable: true, showBikeButton: true),
-          _BikeSlotItem(slotNumber: 3, isAvailable: false),
-          _BikeSlotItem(slotNumber: 4, isAvailable: true),
-          _BikeSlotItem(slotNumber: 5, isAvailable: false),
+          // Bike slots - dynamically generated
+          ...() {
+            final slots = _generateBikeSlots();
+            final slotsToShow = slots.take(5).toList();
+            return List.generate(slotsToShow.length, (index) {
+              final showBikeButton = index == 1 && slotsToShow[index];
+              return _BikeSlotItem(
+                slotNumber: index + 1,
+                isAvailable: slotsToShow[index],
+                showBikeButton: showBikeButton,
+              );
+            });
+          }(),
 
           const SizedBox(height: 12),
           Center(
             child: TextButton(
               onPressed: () {},
-              child: Text('+ 15 more slots', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+              child: Text('+ ${(currentStation?.totalCapacity ?? 20) - 5} more slots', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             ),
           ),
-          const SizedBox(height: 16),
-
-          PrimaryButton(label: 'Scan to Unlock', onPressed: () {}),
           const SizedBox(height: 110), // Extra padding for nav bar
           ], // end of expanded content
         ],
@@ -523,40 +631,16 @@ class _StationPopup extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Dismiss'),
-                  ),
+            // Action button
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryOrange,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Scan to Unlock',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              child: const Text('Dismiss'),
             ),
           ],
         ),
@@ -661,18 +745,28 @@ class _BikeSlotItem extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           if (isAvailable)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryOrange,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Rent',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const QrScannerScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryOrange,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Rent',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             )

@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../themes/theme.dart';
-import '../widgets/reusable_components.dart';
+import 'web_camera_stub.dart'
+    if (dart.library.html) 'web_camera_impl.dart';
+import 'bike_connecting_screen.dart';
 
-/// QR Scanner Screen with custom overlay and manual code entry
+/// QR Scanner Screen with working scan detection and unlock success flow
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
 
@@ -12,55 +14,187 @@ class QrScannerScreen extends StatefulWidget {
   State<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<QrScannerScreen> {
-  final MobileScannerController _scannerController = MobileScannerController();
-  final TextEditingController _manualCodeController = TextEditingController();
+class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProviderStateMixin {
+  final MobileScannerController _scannerController = MobileScannerController(
+    facing: CameraFacing.front,
+  );
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  bool _isFlashOn = false;
+  bool _hasScanned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.05, end: 0.9).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    // On web, start the HTML5 camera feed with QR detection
+    if (kIsWeb) {
+      initWebCamera(onQrDetected: _handleCodeFound);
+    }
+  }
 
   @override
   void dispose() {
-    _scannerController.dispose();
-    _manualCodeController.dispose();
+    if (kIsWeb) {
+      disposeWebCamera();
+    } else {
+      _scannerController.dispose();
+    }
+    _animationController.dispose();
     super.dispose();
   }
 
   void _onQrDetected(BarcodeCapture capture) {
-    final List<Barcode> barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      if (barcode.rawValue != null) {
-        // Handle scanned QR code
-        debugPrint('QR Code detected: ${barcode.rawValue}');
-        // You can navigate or show a dialog here
-      }
+    if (_hasScanned) return;
+    final barcode = capture.barcodes.firstOrNull;
+    if (barcode?.rawValue != null) {
+      _handleCodeFound(barcode!.rawValue!);
     }
   }
 
-  void _submitManualCode() {
-    if (_manualCodeController.text.isNotEmpty) {
-      // Handle manual code entry
-      debugPrint('Manual code entered: ${_manualCodeController.text}');
-      // You can navigate or show a dialog here
-    }
+  void _handleCodeFound(String code) {
+    if (_hasScanned) return;
+    setState(() => _hasScanned = true);
+    _animationController.stop();
+    
+    // Navigate to connecting screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => BikeConnectingScreen(
+          bikeCode: code,
+          stationName: 'Capitole Square',
+        ),
+      ),
+    );
+  }
+
+  void _toggleFlash() {
+    setState(() => _isFlashOn = !_isFlashOn);
+    _scannerController.toggleTorch();
+  }
+
+  void _showManualEntryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Enter Bike Code'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            hintText: 'e.g., CO-04',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.primaryOrange, width: 2),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                Navigator.pop(ctx);
+                _handleCodeFound(controller.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryOrange,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Unlock', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Scan QR Code'),
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        centerTitle: true,
+        leadingWidth: 80,
+        title: const Text(
+          'Scan QR Code',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Center(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: GestureDetector(
+                onTap: _toggleFlash,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.flash_on,
+                      color: _isFlashOn ? Colors.amber : Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Flash',
+                      style: TextStyle(
+                        color: _isFlashOn ? Colors.amber : Colors.white,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          // Mobile Scanner
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onQrDetected,
+          // Full-screen camera feed (behind everything)
+          Positioned.fill(
+            child: kIsWeb
+                ? const WebCameraView()
+                : MobileScanner(
+                    controller: _scannerController,
+                    onDetect: _onQrDetected,
+                  ),
           ),
           
           // Dark overlay with transparent cutout
@@ -69,11 +203,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             child: Container(),
           ),
           
-          // Orange corner borders
+          // Orange corner borders and scanning line
           Center(
             child: Container(
-              width: 250,
-              height: 250,
+              margin: const EdgeInsets.only(bottom: 120),
+              width: 340,
+              height: 340,
               child: Stack(
                 children: [
                   // Top-left corner
@@ -108,57 +243,180 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                       isBottomRight: true,
                     ),
                   ),
+                  // Animated scanning line (only while searching)
+                  if (!_hasScanned)
+                    AnimatedBuilder(
+                      animation: _animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          top: _animation.value * 340,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: 2,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryOrange,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryOrange.withOpacity(0.5),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
           ),
           
-          // Manual code entry section at bottom
+          // Bottom scanning info sheet
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withOpacity(0.97),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
               ),
               child: SafeArea(
+                top: false,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Enter Code Manually',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _manualCodeController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter bike code',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppTheme.primaryOrange,
-                            width: 2,
-                          ),
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    PrimaryButton(
-                      label: 'Submit Code',
-                      onPressed: _submitManualCode,
+
+                    // Station name + searching status on one compact row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Scanning for',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Capitole Square',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: _hasScanned ? Colors.green : Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _hasScanned ? 'Found!' : 'Searching...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _hasScanned ? Colors.green : Colors.red,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Action button(s)
+                    Center(
+                      child: kIsWeb
+                          ? Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: GestureDetector(
+                                    onTap: () => _handleCodeFound('CO-04'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryOrange,
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          '⚡  Simulate QR Scan (Demo)',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _showManualEntryDialog,
+                                  child: Text(
+                                    'Enter bike code manually',
+                                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : SizedBox(
+                              width: double.infinity,
+                              child: GestureDetector(
+                                onTap: _showManualEntryDialog,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryOrange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: AppTheme.primaryOrange.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Enter bike code manually',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: AppTheme.primaryOrange,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -176,19 +434,19 @@ class _QrScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.7)
+      ..color = Colors.black.withOpacity(0.6)
       ..style = PaintingStyle.fill;
 
-    final cutoutSize = 250.0;
+    final cutoutSize = 340.0;
     final cutoutRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
+      center: Offset(size.width / 2, (size.height / 2) - 60),
       width: cutoutSize,
       height: cutoutSize,
     );
 
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRect(cutoutRect)
+      ..addRRect(RRect.fromRectAndRadius(cutoutRect, const Radius.circular(16)))
       ..fillType = PathFillType.evenOdd;
 
     canvas.drawPath(path, paint);
@@ -215,21 +473,21 @@ class _CornerBorder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 60,
+      height: 60,
       decoration: BoxDecoration(
         border: Border(
           top: (isTopLeft || isTopRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 4)
+              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
               : BorderSide.none,
           bottom: (isBottomLeft || isBottomRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 4)
+              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
               : BorderSide.none,
           left: (isTopLeft || isBottomLeft)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 4)
+              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
               : BorderSide.none,
           right: (isTopRight || isBottomRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 4)
+              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
               : BorderSide.none,
         ),
       ),
