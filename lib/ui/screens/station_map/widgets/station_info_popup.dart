@@ -10,6 +10,7 @@ class StationInfoPopup extends StatelessWidget {
     required this.onClose,
     required this.onNavigate,
     required this.onReturnBike,
+    required this.onViewStation,
   });
 
   final Station station;
@@ -17,6 +18,7 @@ class StationInfoPopup extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onNavigate;
   final VoidCallback onReturnBike;
+  final VoidCallback onViewStation;
 
   @override
   Widget build(BuildContext context) {
@@ -87,21 +89,27 @@ class StationInfoPopup extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: onClose,
+            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
+            child: const Text('Close'),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: <Widget>[
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onClose,
-                  child: const Text('Close'),
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
                   onPressed: isReturnMode ? onReturnBike : onNavigate,
                   child: Text(
                     isReturnMode ? 'Return Bike Here' : 'Navigate Here',
                   ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: onViewStation,
+                  child: const Text('View Station'),
                 ),
               ),
             ],
