@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/model/subscription_plans/bank_option.dart';
+import '../state/subscription_pass_bank_state.dart';
 import 'daily_pass_screen.dart';
 import 'monthly_pass_screen.dart';
+import 'subscription_bank_selection_screen.dart';
 
 class AnnualPassScreen extends StatelessWidget {
   const AnnualPassScreen({super.key});
@@ -170,65 +173,26 @@ class AnnualPassScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFF15B00), width: 1.2),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E3E93),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'ABA',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ABA Bank - KHQR',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Color(0xFF2C2C2C),
-                            ),
+              ValueListenableBuilder<BankOption>(
+                valueListenable: selectedSubscriptionBank,
+                builder: (context, bank, _) {
+                  return _SelectedBankCard(
+                    bank: bank,
+                    onChange: () async {
+                      final selected = await Navigator.of(context).push<BankOption>(
+                        MaterialPageRoute<BankOption>(
+                          builder: (_) => SubscriptionBankSelectionScreen(
+                            initialBankId: bank.id,
                           ),
-                          SizedBox(height: 1),
-                          Text(
-                            'Tap to change bank',
-                            style: TextStyle(color: Color(0xFFB2B2B2), fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Change',
-                        style: TextStyle(
-                          color: Color(0xFFF15B00),
-                          fontWeight: FontWeight.w700,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
+                      );
+
+                      if (selected != null) {
+                        selectedSubscriptionBank.value = selected;
+                      }
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -338,6 +302,80 @@ class _PlanFeatureRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SelectedBankCard extends StatelessWidget {
+  const _SelectedBankCard({
+    required this.bank,
+    required this.onChange,
+  });
+
+  final BankOption bank;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF15B00), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Color(bank.colorHex),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              bank.shortName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${bank.name} - KHQR',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Color(0xFF2C2C2C),
+                  ),
+                ),
+                const SizedBox(height: 1),
+                const Text(
+                  'Tap to change bank',
+                  style: TextStyle(color: Color(0xFFB2B2B2), fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onChange,
+            child: const Text(
+              'Change',
+              style: TextStyle(
+                color: Color(0xFFF15B00),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
