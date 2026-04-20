@@ -7,9 +7,19 @@ import 'package:final_project_velotolouse/domain/repositories/navigation/navigat
 import 'package:final_project_velotolouse/domain/repositories/routes/station_route_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:final_project_velotolouse/main_common.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+
+String get _googleDirectionsApiKey {
+  if (!dotenv.isInitialized) {
+    return '';
+  }
+
+  return dotenv.env['GOOGLE_DIRECTIONS_API_KEY'] ?? '';
+}
 
 List<SingleChildWidget> get devProviders {
   return <SingleChildWidget>[
@@ -21,7 +31,7 @@ List<SingleChildWidget> get devProviders {
     ),
     Provider<StationRouteRepository>(
       create: (_) => GoogleStationRouteRepository(
-        apiKey: const String.fromEnvironment('GOOGLE_DIRECTIONS_API_KEY'),
+        apiKey: _googleDirectionsApiKey,
       ),
     ),
     Provider<StationRepository>(create: (_) => MockStationRepository()),
@@ -37,6 +47,8 @@ List<SingleChildWidget> get devProviders {
   ];
 }
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env', isOptional: true);
   mainCommon(devProviders);
 }

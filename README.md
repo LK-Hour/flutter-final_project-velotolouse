@@ -62,6 +62,20 @@ Implemented behaviors include:
 
 ## Run the Project
 
+Set your Google Directions key once:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
+
+```env
+GOOGLE_DIRECTIONS_API_KEY=YOUR_KEY_HERE
+```
+
+Run the app:
+
 ```bash
 flutter pub get
 flutter run
