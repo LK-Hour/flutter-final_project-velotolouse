@@ -5,6 +5,7 @@ import '../../../data/repositories/subscription_plans/mock_instant_payment_repos
 import '../../../domain/model/subscription_plans/bank_option.dart';
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
+import 'booking_confirmation_screen.dart';
 import 'view_model/instant_payment_view_model.dart';
 
 class InstantPaymentScreen extends StatelessWidget {
@@ -154,10 +155,12 @@ class _InstantPaymentView extends StatelessWidget {
                     }
 
                     if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Payment simulated via ${selectedBank.shortName}.',
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => BookingConfirmationScreen(
+                            paymentLabel: '${selectedBank.name} - KHQR',
+                            amountLabel:
+                                '\$${summary.rideCostUsd.toStringAsFixed(2)}',
                           ),
                         ),
                       );

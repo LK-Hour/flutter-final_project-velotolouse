@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/model/subscription_plans/bank_option.dart';
+import '../booking_confirmation_screen.dart';
 import '../state/subscription_pass_bank_state.dart';
 import 'annual_pass_screen.dart';
 import 'monthly_pass_screen.dart';
@@ -198,7 +199,17 @@ class DailyPassScreen extends StatelessWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    final bank = selectedSubscriptionBank.value;
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => BookingConfirmationScreen(
+                          paymentLabel: '${bank.name} - KHQR',
+                          amountLabel: '\$1.99',
+                        ),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF15B00),
                     foregroundColor: Colors.white,
