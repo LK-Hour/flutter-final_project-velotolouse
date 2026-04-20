@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../domain/model/subscription_plans/bank_option.dart';
 import '../booking_confirmation_screen.dart';
 import '../state/subscription_pass_bank_state.dart';
+import '../widgets/plan_feature_row.dart';
+import '../widgets/plan_type_chip.dart';
+import '../widgets/selected_bank_card.dart';
 import 'daily_pass_screen.dart';
 import 'monthly_pass_screen.dart';
 import 'subscription_bank_selection_screen.dart';
@@ -50,7 +53,7 @@ class AnnualPassScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _PlanTypeChip(
+                    child: PlanTypeChip(
                       label: 'Daily',
                       onTap: () {
                         Navigator.of(context).pushReplacement(
@@ -63,7 +66,7 @@ class AnnualPassScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _PlanTypeChip(
+                    child: PlanTypeChip(
                       label: 'Monthly',
                       onTap: () {
                         Navigator.of(context).pushReplacement(
@@ -76,7 +79,7 @@ class AnnualPassScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   const Expanded(
-                    child: _PlanTypeChip(label: 'Annual', selected: true),
+                    child: PlanTypeChip(label: 'Annual', selected: true),
                   ),
                 ],
               ),
@@ -151,22 +154,22 @@ class AnnualPassScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     const Divider(color: Color(0xFFF0F0F0), height: 1),
                     const SizedBox(height: 12),
-                    const _PlanFeatureRow(
+                    const PlanFeatureRow(
                       text: 'Everything in Monthly, all year',
                       enabled: true,
                     ),
                     const SizedBox(height: 12),
-                    const _PlanFeatureRow(
+                    const PlanFeatureRow(
                       text: 'Unlimited 60-min rides',
                       enabled: true,
                     ),
                     const SizedBox(height: 12),
-                    const _PlanFeatureRow(
+                    const PlanFeatureRow(
                       text: 'E-bike + priority unlock',
                       enabled: true,
                     ),
                     const SizedBox(height: 12),
-                    const _PlanFeatureRow(
+                    const PlanFeatureRow(
                       text: 'Save \$80.88 vs monthly billing',
                       enabled: true,
                     ),
@@ -177,7 +180,7 @@ class AnnualPassScreen extends StatelessWidget {
               ValueListenableBuilder<BankOption>(
                 valueListenable: selectedSubscriptionBank,
                 builder: (context, bank, _) {
-                  return _SelectedBankCard(
+                  return SelectedBankCard(
                     bank: bank,
                     onChange: () async {
                       final selected = await Navigator.of(context).push<BankOption>(
@@ -233,159 +236,6 @@ class AnnualPassScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PlanTypeChip extends StatelessWidget {
-  const _PlanTypeChip({
-    required this.label,
-    this.selected = false,
-    this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF15B00) : const Color(0xFFEDEDED),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFFB9B9B9),
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PlanFeatureRow extends StatelessWidget {
-  const _PlanFeatureRow({
-    required this.text,
-    required this.enabled,
-  });
-
-  final String text;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final iconBg = enabled ? const Color(0xFFFCEDE5) : const Color(0xFFF2F2F2);
-    final iconColor = enabled ? const Color(0xFFF15B00) : const Color(0xFFD5D5D5);
-
-    return Row(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: iconBg,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.check, size: 16, color: iconColor),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              color: enabled ? const Color(0xFF2C2C2C) : const Color(0xFFD0D0D0),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SelectedBankCard extends StatelessWidget {
-  const _SelectedBankCard({
-    required this.bank,
-    required this.onChange,
-  });
-
-  final BankOption bank;
-  final VoidCallback onChange;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF15B00), width: 1.2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Color(bank.colorHex),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              bank.shortName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${bank.name} - KHQR',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: Color(0xFF2C2C2C),
-                  ),
-                ),
-                const SizedBox(height: 1),
-                const Text(
-                  'Tap to change bank',
-                  style: TextStyle(color: Color(0xFFB2B2B2), fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: onChange,
-            child: const Text(
-              'Change',
-              style: TextStyle(
-                color: Color(0xFFF15B00),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
