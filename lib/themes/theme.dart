@@ -24,7 +24,7 @@ class AppTheme {
         backgroundColor: primaryOrange,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         textStyle: const TextStyle(
           fontWeight: FontWeight.bold,
@@ -43,16 +43,6 @@ class AppTheme {
       bodyMedium: TextStyle(fontSize: 14, color: Colors.black87),
       bodySmall: TextStyle(fontSize: 12, color: Colors.black54),
       labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: primaryOrange),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: primaryOrange),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: primaryOrange, width: 2),
-      ),
     ),
     useMaterial3: true,
   );

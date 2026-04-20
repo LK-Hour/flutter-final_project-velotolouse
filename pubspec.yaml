@@ -31,7 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.2 # State management
-  google_maps_flutter: ^2.6.0 # Google Maps
+  flutter_map: ^6.1.0 # OpenStreetMap (no API key needed)
+  latlong2: ^0.9.0 # Lat/Lng coordinates for flutter_map
   mobile_scanner: ^3.5.0 # QR scanning
   flutter_svg: ^2.0.10 # UI helper for SVGs
   cupertino_icons: ^1.0.6 # iOS style icons
@@ -53,9 +54,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-    assets:
-      - assets/images/
-      - assets/icons/
+  
+  assets:
+    - assets/images/
+    - assets/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
