@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
+import 'package:final_project_velotolouse/ui/routing/app_router.dart';
 import 'package:flutter/material.dart';
 import '../themes/theme.dart';
 
@@ -29,7 +30,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
   void initState() {
     super.initState();
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 1800),
       vsync: this,
     );
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -46,16 +47,15 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
       }
     });
 
-    // Navigate to unlock success when complete
-    _completeTimer = Timer(const Duration(milliseconds: 3000), () {
+    // Navigate to active ride dashboard after 2-second simulated connection.
+    _completeTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (ctx) => _UnlockSuccessScreen(
-              bikeCode: widget.bikeCode,
-              stationName: widget.stationName,
-            ),
+          AppRoutes.activeRide,
+          arguments: ActiveRideArgs(
+            bikeCode: widget.bikeCode,
+            stationName: widget.stationName,
           ),
         );
       }

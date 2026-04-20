@@ -1,10 +1,10 @@
+import 'package:final_project_velotolouse/ui/routing/app_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../themes/theme.dart';
 import 'web_camera_stub.dart'
     if (dart.library.html) 'web_camera_impl.dart';
-import 'bike_connecting_screen.dart';
 
 /// QR Scanner Screen with working scan detection and unlock success flow
 class QrScannerScreen extends StatefulWidget {
@@ -62,15 +62,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
     if (_hasScanned) return;
     setState(() => _hasScanned = true);
     _animationController.stop();
-    
-    // Navigate to connecting screen
-    Navigator.pushReplacement(
+
+    // Replace scanner with the 2-second connecting screen.
+    Navigator.pushReplacementNamed(
       context,
-      MaterialPageRoute(
-        builder: (ctx) => BikeConnectingScreen(
-          bikeCode: code,
-          stationName: 'Capitole Square',
-        ),
+      AppRoutes.bikeConnecting,
+      arguments: BikeConnectionArgs(
+        bikeCode: code,
+        stationName: 'Capitole Square',
       ),
     );
   }
