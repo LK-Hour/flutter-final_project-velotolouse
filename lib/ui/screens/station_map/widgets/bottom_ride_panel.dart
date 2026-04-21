@@ -5,11 +5,13 @@ class BottomRidePanel extends StatelessWidget {
   const BottomRidePanel({
     super.key,
     this.onScanTap,
+    this.onProfileTap,
     this.selectedStationName,
     this.isReturnMode = false,
   });
 
   final VoidCallback? onScanTap;
+  final VoidCallback? onProfileTap;
   final String? selectedStationName;
   final bool isReturnMode;
 
@@ -110,7 +112,10 @@ class BottomRidePanel extends StatelessWidget {
             left: 24,
             right: 24,
             bottom: 8,
-            child: _BottomBarContent(onScanTap: onScanTap),
+            child: _BottomBarContent(
+              onScanTap: onScanTap,
+              onProfileTap: onProfileTap,
+            ),
           ),
         ],
       ),
@@ -135,9 +140,10 @@ class _PanelHandle extends StatelessWidget {
 }
 
 class _BottomBarContent extends StatelessWidget {
-  const _BottomBarContent({this.onScanTap});
+  const _BottomBarContent({this.onScanTap, this.onProfileTap});
 
   final VoidCallback? onScanTap;
+  final VoidCallback? onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +175,7 @@ class _BottomBarContent extends StatelessWidget {
                     child: _BottomNavItem(
                       label: 'Profile',
                       icon: Icons.person_outline,
-                      onTap: () {},
+                      onTap: onProfileTap,
                     ),
                   ),
                 ),

@@ -9,6 +9,8 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
+import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/subscription_plans/instant_payment_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -184,6 +186,22 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
+  void _onInstantPaymentPressed(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const InstantPaymentScreen(),
+      ),
+    );
+  }
+
+  void _onProfilePressed(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProfileScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final StationMapViewModel viewModel = context.watch<StationMapViewModel>();
@@ -332,6 +350,8 @@ class StationMapScreen extends StatelessWidget {
                                   viewModel,
                                   selectedStation,
                                 ),
+                                onInstantPayment: () =>
+                                    _onInstantPaymentPressed(context),
                               ),
                       ),
                   ],
@@ -346,6 +366,7 @@ class StationMapScreen extends StatelessWidget {
                 selectedStationName: selectedStation?.name,
                 isReturnMode: viewModel.isReturnMode,
                 onScanTap: () => _onScanButtonPressed(context, viewModel),
+                onProfileTap: () => _onProfilePressed(context),
               ),
             ),
           ],

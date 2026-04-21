@@ -81,6 +81,46 @@ flutter pub get
 flutter run
 ```
 
+## Firebase Backend Setup
+
+The instant payment flow now supports a Firebase backend (Cloud Firestore).
+
+1. Install FlutterFire CLI:
+
+```bash
+dart pub global activate flutterfire_cli
+```
+
+2. Login and configure your Firebase project for this app:
+
+```bash
+flutterfire configure
+```
+
+3. Enable Cloud Firestore in Firebase Console.
+
+4. Create the Firestore data used by the app:
+
+- Document: `app_config/instant_payment`
+  - `ride_cost_usd` (number)
+  - `ride_cost_khr` (number)
+  - `duration` (string)
+  - `distance_km` (number)
+
+- Subcollection: `app_config/instant_payment/bank_options`
+  - each document fields:
+    - `short_name` (string)
+    - `name` (string)
+    - `subtitle` (string)
+    - `color_hex` (number, e.g. `4280176275`)
+    - `order` (number)
+
+When users pay, transactions are written to:
+
+- Collection: `instant_payment_transactions`
+
+If Firebase is not configured yet, the app automatically falls back to mock data.
+
 ## Development Commands
 
 ```bash
