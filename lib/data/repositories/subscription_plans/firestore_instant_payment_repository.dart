@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../dto/subscription_plans/bank_option_dto.dart';
+import '../../dto/subscription_plans/instant_payment_data_dto.dart';
+import '../../dto/subscription_plans/instant_payment_transaction_dto.dart';
+import '../../dto/subscription_plans/ride_payment_summary_dto.dart';
+import '../../dto/subscription_plans/subscription_transaction_dto.dart';
 import '../../../domain/model/subscription_plans/bank_option.dart';
 import '../../../domain/model/subscription_plans/instant_payment_data.dart';
 import '../../../domain/model/subscription_plans/instant_payment_transaction.dart';
@@ -18,13 +23,7 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
     final summaryDoc =
         await _firestore.collection('app_config').doc('instant_payment').get();
 
-    final summaryData = summaryDoc.data();
-    final summary = RidePaymentSummary(
-      rideCostUsd: _asDouble(summaryData?['ride_cost_usd'], fallback: 1.50),
-      rideCostKhr: _asInt(summaryData?['ride_cost_khr'], fallback: 6150),
-      duration: (summaryData?['duration'] as String?) ?? '14:02',
-      distanceKm: _asDouble(summaryData?['distance_km'], fallback: 2.4),
-    );
+    final summaryDto = RidePaymentSummaryDto.fromFirestore(summaryDoc.data());
 
     final banksSnapshot = await _firestore
         .collection('app_config')
@@ -33,13 +32,15 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
         .orderBy('order', descending: false)
         .get();
 
-    final banks = banksSnapshot.docs
-        .map((doc) => _bankFromMap(doc.id, doc.data()))
+    final bankDtos = banksSnapshot.docs
+        .map((doc) => BankOptionDto.fromFirestore(doc.id, doc.data()))
         .toList(growable: false);
 
-    return InstantPaymentData(
-      summary: summary,
-      banks: banks.isEmpty ? _defaultBanks : banks,
+    return InstantPaymentDataDto(
+      summary: summaryDto,
+      banks: bankDtos,
+    ).toDomain(
+      fallbackBanks: _defaultBanks,
     );
   }
 
@@ -48,16 +49,14 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
     required RidePaymentSummary summary,
     required BankOption bank,
   }) async {
-    await _firestore.collection('instant_payment_transactions').add({
-      'bank_id': bank.id,
-      'bank_name': bank.name,
-      'bank_short_name': bank.shortName,
-      'amount_usd': summary.rideCostUsd,
-      'amount_khr': summary.rideCostKhr,
-      'duration': summary.duration,
-      'distance_km': summary.distanceKm,
-      'created_at': FieldValue.serverTimestamp(),
-    });
+    final dto = InstantPaymentTransactionDto.fromDomain(
+      summary: summary,
+      bank: bank,
+    );
+
+    await _firestore
+        .collection('instant_payment_transactions')
+        .add(dto.toFirestoreMap());
   }
 
   @override
@@ -67,15 +66,16 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
     required double amountUsd,
     required BankOption bank,
   }) async {
-    await _firestore.collection('subscription_transactions').add({
-      'plan_id': planId,
-      'plan_label': planLabel,
-      'bank_id': bank.id,
-      'bank_name': bank.name,
-      'bank_short_name': bank.shortName,
-      'amount_usd': amountUsd,
-      'created_at': FieldValue.serverTimestamp(),
-    });
+    final dto = SubscriptionTransactionDto.fromDomain(
+      planId: planId,
+      planLabel: planLabel,
+      amountUsd: amountUsd,
+      bank: bank,
+    );
+
+    await _firestore
+        .collection('subscription_transactions')
+        .add(dto.toFirestoreMap());
   }
 
   @override
@@ -87,7 +87,12 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
         .get();
 
     return snapshot.docs
-        .map((doc) => _transactionFromMap(doc.id, doc.data()))
+        .map(
+          (doc) => InstantPaymentTransactionDto.fromFirestore(
+            doc.id,
+            doc.data(),
+          ).toDomain(),
+        )
         .toList(growable: false);
   }
 
@@ -100,78 +105,13 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
         .get();
 
     return snapshot.docs
-        .map((doc) => _subscriptionTransactionFromMap(doc.id, doc.data()))
+        .map(
+          (doc) => SubscriptionTransactionDto.fromFirestore(
+            doc.id,
+            doc.data(),
+          ).toDomain(),
+        )
         .toList(growable: false);
-  }
-
-  BankOption _bankFromMap(String id, Map<String, dynamic> data) {
-    return BankOption(
-      id: id,
-      shortName: (data['short_name'] as String?) ?? id.toUpperCase(),
-      name: (data['name'] as String?) ?? 'Unknown Bank',
-      subtitle: (data['subtitle'] as String?) ?? '',
-      colorHex: _asInt(data['color_hex'], fallback: 0xFF1E3E93),
-    );
-  }
-
-  InstantPaymentTransaction _transactionFromMap(
-    String id,
-    Map<String, dynamic> data,
-  ) {
-    final timestamp = data['created_at'];
-    DateTime? createdAt;
-    if (timestamp is Timestamp) {
-      createdAt = timestamp.toDate();
-    }
-
-    return InstantPaymentTransaction(
-      id: id,
-      bankName: (data['bank_name'] as String?) ?? 'Unknown Bank',
-      bankShortName: (data['bank_short_name'] as String?) ?? 'BANK',
-      amountUsd: _asDouble(data['amount_usd'], fallback: 0),
-      amountKhr: _asInt(data['amount_khr'], fallback: 0),
-      duration: (data['duration'] as String?) ?? '-',
-      distanceKm: _asDouble(data['distance_km'], fallback: 0),
-      createdAt: createdAt,
-    );
-  }
-
-  SubscriptionTransaction _subscriptionTransactionFromMap(
-    String id,
-    Map<String, dynamic> data,
-  ) {
-    final timestamp = data['created_at'];
-    DateTime? createdAt;
-    if (timestamp is Timestamp) {
-      createdAt = timestamp.toDate();
-    }
-
-    return SubscriptionTransaction(
-      id: id,
-      planId: (data['plan_id'] as String?) ?? 'unknown',
-      planLabel: (data['plan_label'] as String?) ?? 'Subscription',
-      bankName: (data['bank_name'] as String?) ?? 'Unknown Bank',
-      bankShortName: (data['bank_short_name'] as String?) ?? 'BANK',
-      amountUsd: _asDouble(data['amount_usd'], fallback: 0),
-      createdAt: createdAt,
-    );
-  }
-
-  static double _asDouble(Object? value, {required double fallback}) {
-    if (value is num) {
-      return value.toDouble();
-    }
-    return fallback;
-  }
-
-  static int _asInt(Object? value, {required int fallback}) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    return fallback;
   }
 
   static const List<BankOption> _defaultBanks = [
