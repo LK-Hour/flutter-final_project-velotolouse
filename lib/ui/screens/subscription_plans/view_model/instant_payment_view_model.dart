@@ -66,7 +66,18 @@ class InstantPaymentViewModel extends ChangeNotifier {
     _isPaying = true;
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    try {
+      await _repository.createInstantPaymentTransaction(
+        summary: _summary!,
+        bank: selectedBank!,
+      );
+      _errorMessage = null;
+    } catch (_) {
+      _errorMessage = 'Payment failed. Please try again.';
+      _isPaying = false;
+      notifyListeners();
+      return false;
+    }
 
     _isPaying = false;
     notifyListeners();

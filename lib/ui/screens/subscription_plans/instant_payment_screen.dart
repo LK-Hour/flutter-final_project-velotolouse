@@ -18,9 +18,13 @@ class InstantPaymentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final providedRepository =
+        Provider.of<InstantPaymentRepository?>(context, listen: false);
+
     return ChangeNotifierProvider<InstantPaymentViewModel>(
       create: (_) => InstantPaymentViewModel(
-        repository: repository ?? MockInstantPaymentRepository(),
+        repository:
+            repository ?? providedRepository ?? MockInstantPaymentRepository(),
       )..load(),
       child: const _InstantPaymentView(),
     );
