@@ -10,6 +10,7 @@ class StationInfoPopup extends StatelessWidget {
     required this.onClose,
     required this.onNavigate,
     required this.onReturnBike,
+    this.onInstantPayment,
   });
 
   final Station station;
@@ -17,6 +18,7 @@ class StationInfoPopup extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onNavigate;
   final VoidCallback onReturnBike;
+  final VoidCallback? onInstantPayment;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +108,16 @@ class StationInfoPopup extends StatelessWidget {
               ),
             ],
           ),
+          if (!isReturnMode && onInstantPayment != null) ...<Widget>[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: onInstantPayment,
+                child: const Text('Instant Payment'),
+              ),
+            ),
+          ],
         ],
       ),
     );

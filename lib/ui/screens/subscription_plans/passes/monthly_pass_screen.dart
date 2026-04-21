@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../domain/model/subscription_plans/bank_option.dart';
+import '../../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 import '../booking_confirmation_screen.dart';
 import '../state/subscription_pass_bank_state.dart';
 import '../widgets/plan_feature_row.dart';
@@ -202,8 +204,34 @@ class MonthlyPassScreen extends StatelessWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final bank = selectedSubscriptionBank.value;
+                    try {
+                      await context
+                          .read<InstantPaymentRepository>()
+                          .createSubscriptionTransaction(
+                            planId: 'monthly',
+                            planLabel: 'Monthly Pass',
+                            amountUsd: 14.99,
+                            bank: bank,
+                          );
+                    } catch (_) {
+                      if (!context.mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Failed to save subscription. Please try again.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (!context.mounted) {
+                      return;
+                    }
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => BookingConfirmationScreen(
