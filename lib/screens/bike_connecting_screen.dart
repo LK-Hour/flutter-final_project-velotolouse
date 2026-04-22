@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:final_project_velotolouse/screens/active_ride_screen.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
 import 'package:final_project_velotolouse/ui/routing/app_router.dart';
 import 'package:flutter/material.dart';
@@ -89,7 +90,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
       body: Column(
         children: [
           const SizedBox(height: 40),
-          
+
           // Progress stepper
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -103,7 +104,9 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                 Expanded(
                   child: Container(
                     height: 2,
-                    color: _currentStep >= 1 ? AppTheme.primaryOrange : Colors.grey[300],
+                    color: _currentStep >= 1
+                        ? AppTheme.primaryOrange
+                        : Colors.grey[300],
                   ),
                 ),
                 _StepIndicator(
@@ -114,7 +117,9 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                 Expanded(
                   child: Container(
                     height: 2,
-                    color: _currentStep >= 2 ? AppTheme.primaryOrange : Colors.grey[300],
+                    color: _currentStep >= 2
+                        ? AppTheme.primaryOrange
+                        : Colors.grey[300],
                   ),
                 ),
                 _StepIndicator(
@@ -168,10 +173,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
 
                   Text(
                     'Connecting to your bike...',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 24),
 
@@ -179,7 +181,8 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                   AnimatedBuilder(
                     animation: _progressAnimation,
                     builder: (context, child) {
-                      final percentage = (_progressAnimation.value * 100).toInt();
+                      final percentage = (_progressAnimation.value * 100)
+                          .toInt();
                       return Column(
                         children: [
                           ClipRRect(
@@ -208,7 +211,10 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
 
                   // Bike info
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
@@ -261,10 +267,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Cancel connection',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ),
                 ],
@@ -299,8 +302,8 @@ class _StepIndicator extends StatelessWidget {
             color: isComplete
                 ? AppTheme.successGreen
                 : isCurrent
-                    ? AppTheme.primaryOrange
-                    : Colors.grey[300],
+                ? AppTheme.primaryOrange
+                : Colors.grey[300],
             shape: BoxShape.circle,
           ),
           child: isComplete
@@ -313,7 +316,9 @@ class _StepIndicator extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             color: isComplete || isCurrent ? Colors.black87 : Colors.grey[500],
-            fontWeight: isComplete || isCurrent ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isComplete || isCurrent
+                ? FontWeight.w600
+                : FontWeight.normal,
           ),
         ),
       ],
@@ -368,10 +373,7 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF4CAF50),
-                  Color(0xFF66BB6A),
-                ],
+                colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
               ),
             ),
           ),
@@ -420,25 +422,27 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
 
                 const Text(
                   'Your ride has started. Have a safe trip!',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
                 const SizedBox(height: 16),
 
                 // Three dots progress indicator
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: index == 0 ? Colors.white : Colors.white.withOpacity(0.4),
-                      shape: BoxShape.circle,
+                  children: List.generate(
+                    3,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: index == 0
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.4),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  )),
+                  ),
                 ),
                 const SizedBox(height: 30),
 
@@ -461,7 +465,9 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryOrange.withOpacity(0.1),
+                                  color: AppTheme.primaryOrange.withOpacity(
+                                    0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -618,7 +624,9 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                                     backgroundColor: Colors.grey[200],
                                     foregroundColor: Colors.black,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -640,7 +648,9 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                                     backgroundColor: const Color(0xFFFFE5E5),
                                     foregroundColor: const Color(0xFFE53935),
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -664,7 +674,10 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                             child: OutlinedButton(
                               onPressed: () {
                                 // Go back to map
-                                Navigator.popUntil(context, (route) => route.isFirst);
+                                Navigator.popUntil(
+                                  context,
+                                  (route) => route.isFirst,
+                                );
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppTheme.primaryOrange,
@@ -672,7 +685,9 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                                   color: AppTheme.primaryOrange,
                                   width: 2,
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -694,13 +709,18 @@ class _UnlockSuccessScreenState extends State<_UnlockSuccessScreen> {
                             child: ElevatedButton(
                               onPressed: () {
                                 // Go back to map
-                                Navigator.popUntil(context, (route) => route.isFirst);
+                                Navigator.popUntil(
+                                  context,
+                                  (route) => route.isFirst,
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.successGreen,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -816,26 +836,6 @@ class _NavBarItem extends StatelessWidget {
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _InfoItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoItem({required this.icon, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: AppTheme.primaryOrange, size: 22),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
       ],
     );
   }

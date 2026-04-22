@@ -2,7 +2,6 @@ import 'package:final_project_velotolouse/domain/model/location/user_location_re
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/screens/stations_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
@@ -10,7 +9,6 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
-import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/instant_payment_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
@@ -70,19 +68,6 @@ class StationMapScreen extends StatelessWidget {
         content: Text('Return mode switches automatically after bike booking.'),
       ),
     );
-  }
-
-  void _onScanButtonPressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-  ) {
-    final bool hasStartedRide = viewModel.activateRideFromScan();
-    final String message = hasStartedRide
-        ? 'Bike unlocked. Return mode activated.'
-        : 'Ride already active. Return your bike at an available dock.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _onReturnModeBannerClose(StationMapViewModel viewModel) {
@@ -189,17 +174,7 @@ class StationMapScreen extends StatelessWidget {
 
   void _onInstantPaymentPressed(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const InstantPaymentScreen(),
-      ),
-    );
-  }
-
-  void _onProfilePressed(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const ProfileScreen(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const InstantPaymentScreen()),
     );
   }
 
@@ -208,10 +183,8 @@ class StationMapScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => StationsScreen(
-          station: station,
-          allStations: viewModel.stations,
-        ),
+        builder: (context) =>
+            StationsScreen(station: station, allStations: viewModel.stations),
       ),
     );
   }
@@ -269,6 +242,7 @@ class StationMapScreen extends StatelessWidget {
                           locateRequestVersion: viewModel.locateRequestVersion,
                           fallbackMarkerPositions: _markerMapPosition,
                           onStationTap: viewModel.selectStation,
+                          onMapTap: viewModel.clearSelectedStation,
                         ),
                       ),
                     if (viewModel.showReturnModeBanner)
@@ -313,11 +287,6 @@ class StationMapScreen extends StatelessWidget {
                         onLocateTap: () =>
                             _onLocateCurrentPositionPressed(context, viewModel),
                       ),
-                    ),
-                    const Positioned(
-                      right: 48,
-                      bottom: 150,
-                      child: StationMapPinDot(),
                     ),
                     if (selectedStation != null)
                       Positioned(
@@ -374,17 +343,6 @@ class StationMapScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: BottomRidePanel(
-                selectedStationName: selectedStation?.name,
-                isReturnMode: viewModel.isReturnMode,
-                onScanTap: () => _onScanButtonPressed(context, viewModel),
-                onProfileTap: () => _onProfilePressed(context),
               ),
             ),
           ],

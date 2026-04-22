@@ -93,7 +93,9 @@ class StationInfoPopup extends StatelessWidget {
           const SizedBox(height: 10),
           OutlinedButton(
             onPressed: onClose,
-            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 40),
+            ),
             child: const Text('Close'),
           ),
           const SizedBox(height: 8),

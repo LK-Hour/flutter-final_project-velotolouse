@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_marker.dart';
@@ -19,6 +21,7 @@ class StationGoogleMapCanvas extends StatefulWidget {
     required this.routePath,
     required this.locateRequestVersion,
     required this.onStationTap,
+    required this.onMapTap,
     required this.fallbackMarkerPositions,
   });
 
@@ -30,9 +33,11 @@ class StationGoogleMapCanvas extends StatefulWidget {
   final List<GeoCoordinate> routePath;
   final int locateRequestVersion;
   final ValueChanged<String> onStationTap;
+  final VoidCallback onMapTap;
   final Map<String, Offset> fallbackMarkerPositions;
   static const String _osmTileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const double _averageBikeSpeedKmh = 15.0;
 
   @override
   State<StationGoogleMapCanvas> createState() => _StationGoogleMapCanvasState();
@@ -101,6 +106,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
         _googleMapController = controller;
         _moveMapViewToCenter();
       },
+      onTap: (_) => widget.onMapTap(),
       markers: _buildGoogleMarkers(),
       polylines: _buildGoogleRoutePolylines(),
     );
@@ -122,6 +128,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
           _isTileMapReady = true;
           _moveMapViewToCenter();
         },
+        onTap: (_, _) => widget.onMapTap(),
       ),
       children: <Widget>[
         fmap.TileLayer(
@@ -135,48 +142,53 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
   }
 
   Widget _buildFallbackCanvas() {
-    return Container(
-      color: AppColors.mapBackground,
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Stack(
-            children: <Widget>[
-              for (final Station station in widget.stations)
-                () {
-                  final bool isSelected =
-                      widget.selectedStation?.id == station.id;
-                  final bool isAvailable = _hasAvailability(station);
-                  return StationMarkerWidget(
-                    key: Key('station-marker-${station.id}'),
-                    label: _markerLabel(station),
-                    etaLabel: _etaLabel(
+    return GestureDetector(
+      key: const Key('fallback-map-canvas'),
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onMapTap,
+      child: Container(
+        color: AppColors.mapBackground,
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return Stack(
+              children: <Widget>[
+                for (final Station station in widget.stations)
+                  () {
+                    final bool isSelected =
+                        widget.selectedStation?.id == station.id;
+                    final bool isAvailable = _hasAvailability(station);
+                    return StationMarkerWidget(
+                      key: Key('station-marker-${station.id}'),
+                      label: _markerLabel(station),
+                      etaLabel: _etaLabel(
+                        isSelected: isSelected,
+                        isAvailable: isAvailable,
+                      ),
+                      isAvailableInCurrentMode: isAvailable,
+                      isReturnMode: widget.isReturnMode,
                       isSelected: isSelected,
-                      isAvailable: isAvailable,
-                    ),
-                    isAvailableInCurrentMode: isAvailable,
-                    isReturnMode: widget.isReturnMode,
-                    isSelected: isSelected,
-                    mapPosition:
-                        widget.fallbackMarkerPositions[station.id] ??
-                        const Offset(0.5, 0.5),
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    onTap: () => widget.onStationTap(station.id),
-                  );
-                }(),
-              if (widget.currentUserLocation != null)
-                const Positioned.fill(
-                  child: IgnorePointer(
-                    child: Align(
-                      child: _CurrentLocationMarker(
-                        markerKey: Key('current-location-fallback-marker'),
+                      mapPosition:
+                          widget.fallbackMarkerPositions[station.id] ??
+                          const Offset(0.5, 0.5),
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      onTap: () => widget.onStationTap(station.id),
+                    );
+                  }(),
+                if (widget.currentUserLocation != null)
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: Align(
+                        child: _CurrentLocationMarker(
+                          markerKey: Key('current-location-fallback-marker'),
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -353,7 +365,56 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     if (!widget.isReturnMode || !isSelected || !isAvailable) {
       return null;
     }
-    return '2 min away';
+
+    if (widget.currentUserLocation == null ||
+        widget.selectedStation == null) {
+      return null;
+    }
+
+    final int minutes = _calculateEtaMinutes(
+      widget.currentUserLocation!,
+      widget.selectedStation!,
+    );
+
+    return '$minutes min away';
+  }
+
+  int _calculateEtaMinutes(GeoCoordinate userLocation, Station station) {
+    final double distanceKm = _calculateDistanceKm(
+      userLocation.latitude,
+      userLocation.longitude,
+      station.latitude,
+      station.longitude,
+    );
+
+    final double timeHours = distanceKm / StationGoogleMapCanvas._averageBikeSpeedKmh;
+    final int timeMinutes = (timeHours * 60).ceil();
+
+    return math.max(1, timeMinutes);
+  }
+
+  double _calculateDistanceKm(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadiusKm = 6371.0;
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+
+    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) *
+            math.cos(_degreesToRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * math.pi / 180.0;
   }
 
   bool _hasMapCenterChanged(GeoCoordinate oldValue, GeoCoordinate newValue) {

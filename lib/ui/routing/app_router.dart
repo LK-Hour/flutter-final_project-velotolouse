@@ -50,7 +50,12 @@ abstract final class AppRoutes {
         return _slide(const QrScannerScreen(), settings);
 
       case AppRoutes.bikeConnecting:
-        final args = settings.arguments as BikeConnectionArgs;
+        final BikeConnectionArgs args = settings.arguments is BikeConnectionArgs
+            ? settings.arguments as BikeConnectionArgs
+            : const BikeConnectionArgs(
+                bikeCode: 'CO-04',
+                stationName: 'Capitole Square',
+              );
         return _slide(
           BikeConnectingScreen(
             bikeCode: args.bikeCode,
@@ -60,7 +65,12 @@ abstract final class AppRoutes {
         );
 
       case AppRoutes.activeRide:
-        final args = settings.arguments as ActiveRideArgs;
+        final ActiveRideArgs args = settings.arguments is ActiveRideArgs
+            ? settings.arguments as ActiveRideArgs
+            : const ActiveRideArgs(
+                bikeCode: 'CO-04',
+                stationName: 'Capitole Square',
+              );
         return _slide(ActiveRideScreen.fromArgs(args), settings);
 
       default:
@@ -92,10 +102,7 @@ abstract final class AppRoutes {
 
 /// Typed argument object for [AppRoutes.bikeConnecting].
 class BikeConnectionArgs {
-  const BikeConnectionArgs({
-    required this.bikeCode,
-    required this.stationName,
-  });
+  const BikeConnectionArgs({required this.bikeCode, required this.stationName});
 
   final String bikeCode;
   final String stationName;
