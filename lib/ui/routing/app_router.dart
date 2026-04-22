@@ -1,6 +1,6 @@
-import 'package:final_project_velotolouse/screens/active_ride_screen.dart';
-import 'package:final_project_velotolouse/screens/bike_connecting_screen.dart';
-import 'package:final_project_velotolouse/screens/qr_scanner_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/bike_connecting/bike_connecting_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 
 /// Central routing table for the VeloToulouse app.

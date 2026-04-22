@@ -1,8 +1,10 @@
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/ui/routing/app_router.dart';
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../themes/theme.dart';
+import 'package:provider/provider.dart';
 import 'web_camera_stub.dart'
     if (dart.library.html) 'web_camera_impl.dart';
 
@@ -58,12 +60,31 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
     }
   }
 
-  void _handleCodeFound(String code) {
+  Future<void> _handleCodeFound(String code) async {
     if (_hasScanned) return;
     setState(() => _hasScanned = true);
     _animationController.stop();
 
-    // Replace scanner with the 2-second connecting screen.
+    // Validate bike exists in the repository before proceeding.
+    final bikeRepo = context.read<BikeRepository>();
+    final slot = await bikeRepo.getBikeByCode(code);
+
+    if (!mounted) return;
+
+    if (slot == null) {
+      // Unknown code — reset so the user can try again.
+      setState(() => _hasScanned = false);
+      _animationController.repeat(reverse: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bike "$code" not found. Please scan again.'),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+      return;
+    }
+
+  
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.bikeConnecting,
@@ -95,7 +116,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppTheme.primaryOrange, width: 2),
+              borderSide: const BorderSide(color: AppColors.warning, width: 2),
             ),
           ),
         ),
@@ -112,7 +133,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryOrange,
+              backgroundColor: AppColors.warning,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Unlock', style: TextStyle(color: Colors.white)),
@@ -254,10 +275,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
                           child: Container(
                             height: 2,
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryOrange,
+                              color: AppColors.warning,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primaryOrange.withOpacity(0.5),
+                                  color: AppColors.warning.withOpacity(0.5),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),
@@ -365,7 +386,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 14),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primaryOrange,
+                                        color: AppColors.warning,
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                       child: const Center(
@@ -397,10 +418,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryOrange.withOpacity(0.1),
+                                    color: AppColors.warning.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: AppTheme.primaryOrange.withOpacity(0.3),
+                                      color: AppColors.warning.withOpacity(0.3),
                                     ),
                                   ),
                                   child: const Center(
@@ -408,7 +429,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
                                       'Enter bike code manually',
                                       style: TextStyle(
                                         fontSize: 15,
-                                        color: AppTheme.primaryOrange,
+                                        color: AppColors.warning,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -477,16 +498,16 @@ class _CornerBorder extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           top: (isTopLeft || isTopRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
-              : BorderSide.none,
-          bottom: (isBottomLeft || isBottomRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
+              ? const BorderSide(color: AppColors.warning, width: 4)
               : BorderSide.none,
           left: (isTopLeft || isBottomLeft)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
+              ? const BorderSide(color: AppColors.warning, width: 4)
               : BorderSide.none,
           right: (isTopRight || isBottomRight)
-              ? BorderSide(color: AppTheme.primaryOrange, width: 6)
+              ? const BorderSide(color: AppColors.warning, width: 4)
+              : BorderSide.none,
+          bottom: (isBottomLeft || isBottomRight)
+              ? const BorderSide(color: AppColors.warning, width: 4)
               : BorderSide.none,
         ),
       ),

@@ -1,13 +1,21 @@
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
-import 'package:final_project_velotolouse/themes/theme.dart';
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// Arguments passed to [ActiveRideScreen] via the named route.
 class ActiveRideArgs {
-  const ActiveRideArgs({required this.bikeCode, required this.stationName});
+  const ActiveRideArgs({
+    required this.bikeCode,
+    required this.stationName,
+    required this.sessionId,
+  });
 
   final String bikeCode;
   final String stationName;
+  final String sessionId;
 }
 
 /// Active ride dashboard shown after a successful bike unlock.
@@ -19,15 +27,18 @@ class ActiveRideScreen extends StatefulWidget {
     super.key,
     required this.bikeCode,
     required this.stationName,
+    required this.sessionId,
   });
 
   final String bikeCode;
   final String stationName;
+  final String sessionId;
 
   /// Convenience factory that builds from a typed [ActiveRideArgs] object.
   factory ActiveRideScreen.fromArgs(ActiveRideArgs args) => ActiveRideScreen(
         bikeCode: args.bikeCode,
         stationName: args.stationName,
+        sessionId: args.sessionId,
       );
 
   @override
@@ -162,12 +173,12 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color:
-                                      AppTheme.primaryOrange.withOpacity(0.1),
+                                      AppColors.warning.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
                                   Icons.pedal_bike,
-                                  color: AppTheme.primaryOrange,
+                                  color: AppColors.warning,
                                   size: 28,
                                 ),
                               ),
@@ -206,7 +217,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 width: 8,
                                 height: 8,
                                 decoration: const BoxDecoration(
-                                  color: AppTheme.successGreen,
+                                  color: AppColors.success,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -215,7 +226,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 'Active',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppTheme.successGreen,
+                                  color: AppColors.success,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -240,7 +251,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 child: _StatBox(
                                   value: _formattedTime,
                                   label: 'Elapsed Time',
-                                  valueColor: AppTheme.primaryOrange,
+                                  valueColor: AppColors.warning,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -255,76 +266,26 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Quick Actions
-                          const Text(
-                            'Quick Actions',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[200],
-                                    foregroundColor: Colors.black,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Lock Bike',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFFE5E5),
-                                    foregroundColor: const Color(0xFFE53935),
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Report Issue',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
                           // End Ride
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () => Navigator.popUntil(
-                                  context, (r) => r.isFirst),
+                              onPressed: () async {
+                                final rideRepo = context.read<RideRepository>();
+                                final bikeRepo = context.read<BikeRepository>();
+                                _rideTimer.pause();
+                                await Future.wait([
+                                  rideRepo.endRide(widget.sessionId),
+                                  bikeRepo.lockBike(widget.bikeCode),
+                                ]);
+                                if (mounted) {
+                                  Navigator.popUntil(context, (r) => r.isFirst);
+                                }
+                              },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppTheme.primaryOrange,
+                                foregroundColor: AppColors.warning,
                                 side: const BorderSide(
-                                    color: AppTheme.primaryOrange, width: 2),
+                                    color: AppColors.warning, width: 2),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -340,34 +301,25 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Start Riding
+                          // Back to Home Screen
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.popUntil(
-                                  context, (r) => r.isFirst),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.successGreen,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.popUntil(context, (r) => r.isFirst);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey[600],
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Start Riding',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward, size: 20),
-                                ],
+                              child: const Text(
+                                'Back to Home Screen',
+                                style: TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w500),
                               ),
                             ),
                           ),
@@ -493,14 +445,14 @@ class _NavBarItem extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(icon,
-            color: isActive ? AppTheme.primaryOrange : Colors.grey[400],
+            color: isActive ? AppColors.warning : Colors.grey[400],
             size: 26),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
-            color: isActive ? AppTheme.primaryOrange : Colors.grey[400],
+            color: isActive ? AppColors.warning : Colors.grey[400],
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

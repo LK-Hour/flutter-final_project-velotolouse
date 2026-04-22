@@ -1,10 +1,9 @@
+import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
+import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../domain/model/stations/station.dart';
-import '../themes/theme.dart';
-import '../widgets/reusable_components.dart';
-import 'qr_scanner_screen.dart';
 
 /// Station View Screen with Google Maps and draggable bike slots list
 class StationsScreen extends StatefulWidget {
@@ -226,7 +225,7 @@ class _StationsScreenState extends State<StationsScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryOrange,
+                          color: AppColors.warning,
                           borderRadius: BorderRadius.circular(25),
                         ),
                         child: const Center(
@@ -398,12 +397,12 @@ class _StationsScreenState extends State<StationsScreen> {
                 Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(color: AppTheme.successGreen, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               const Text(
                 'SMART RETURN MODE ACTIVE',
-                style: TextStyle(color: AppTheme.successGreen, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 0.5),
+                style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 0.5),
               ),
             ],
           ),
@@ -435,13 +434,13 @@ class _StationsScreenState extends State<StationsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.successGreen.withOpacity(0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${currentStation?.freeDocks ?? 12}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.successGreen)),
+                      Text('${currentStation?.freeDocks ?? 12}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppColors.success)),
                       Text('Free Docks', style: TextStyle(color: Colors.grey[700], fontSize: 14)),
                     ],
                   ),
@@ -585,7 +584,7 @@ class _StationPopup extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.successGreen.withOpacity(0.1),
+                      color: AppColors.success.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
@@ -596,7 +595,7 @@ class _StationPopup extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.successGreen,
+                            color: AppColors.success,
                           ),
                         ),
                         Text('Free Docks', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
@@ -669,7 +668,7 @@ class _BikeSlotItem extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isAvailable 
-          ? AppTheme.successGreen.withOpacity(0.05)
+          ? AppColors.success.withOpacity(0.05)
           : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
       ),
@@ -680,7 +679,7 @@ class _BikeSlotItem extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isAvailable ? AppTheme.successGreen : Colors.grey[300],
+              color: isAvailable ? AppColors.success : Colors.grey[300],
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -701,13 +700,13 @@ class _BikeSlotItem extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isAvailable 
-                ? AppTheme.successGreen.withOpacity(0.2)
+                ? AppColors.success.withOpacity(0.2)
                 : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.pedal_bike,
-              color: isAvailable ? AppTheme.successGreen : Colors.grey[400],
+              color: isAvailable ? AppColors.success : Colors.grey[400],
               size: 24,
             ),
           ),
@@ -718,7 +717,7 @@ class _BikeSlotItem extends StatelessWidget {
             child: Text(
               isAvailable ? 'Available' : 'Empty slot',
               style: TextStyle(
-                color: isAvailable ? AppTheme.successGreen : Colors.grey[500],
+                color: isAvailable ? AppColors.success : Colors.grey[500],
                 fontWeight: isAvailable ? FontWeight.w600 : FontWeight.normal,
                 fontSize: 16,
               ),
@@ -757,7 +756,7 @@ class _BikeSlotItem extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryOrange,
+                  color: AppColors.warning,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(

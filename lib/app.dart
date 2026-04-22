@@ -1,8 +1,8 @@
 import 'package:final_project_velotolouse/ui/routing/app_router.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/station_map_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
-import 'package:final_project_velotolouse/screens/profile_screen.dart';
-import 'package:final_project_velotolouse/widgets/custom_bottom_nav_bar.dart';
+import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
+import 'package:final_project_velotolouse/ui/widgets/custom_bottom_nav_bar.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +18,7 @@ class VeloToulouseApp extends StatelessWidget {
       title: 'VeloToulouse',
       theme: appTheme,
       home: const MainShell(),
-      onGenerateRoute: AppRouter.onGenerateRoute,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }

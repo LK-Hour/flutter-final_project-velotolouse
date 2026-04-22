@@ -1,5 +1,5 @@
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import '../themes/theme.dart';
 
 /// Custom bottom navigation bar with 3 tabs and a central floating QR button.
 class CustomBottomNavBar extends StatelessWidget {
@@ -80,7 +80,7 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppTheme.primaryOrange : const Color(0xFF9E9E9E);
+    final color = isActive ? AppColors.warning : const Color(0xFF9E9E9E);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
