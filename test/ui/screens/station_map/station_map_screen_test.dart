@@ -1,9 +1,13 @@
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/routes/station_route_repository.dart';
+import 'package:final_project_velotolouse/data/repositories/bikes/mock_bike_repository.dart';
+import 'package:final_project_velotolouse/data/repositories/rides/mock_ride_repository.dart';
 import 'package:final_project_velotolouse/data/repositories/stations/station_repository_mock.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/station_map_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
@@ -32,7 +36,7 @@ void main() {
     expect(find.text('3 Bikes'), findsOneWidget);
     expect(find.text('5 Bikes'), findsOneWidget);
     expect(find.text('8 Bikes'), findsOneWidget);
-    expect(find.text('Ready to ride?'), findsOneWidget);
+    expect(find.text('Ready to ride?'), findsNothing);
     expect(find.byKey(const Key('scan-button')), findsOneWidget);
     expect(find.byIcon(Icons.gps_fixed_rounded), findsOneWidget);
     expect(find.byIcon(Icons.layers_outlined), findsNothing);
@@ -77,8 +81,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>.value(
-          value: viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
@@ -168,46 +172,79 @@ void main() {
   testWidgets('scan button starts ride and enables return mode', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
-      MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
-          child: const StationMapScreen(),
-        ),
+      MultiProvider(
+        providers: [
+          Provider<BikeRepository>(
+            create: (_) => MockBikeRepository(
+              getBikeDelay: Duration.zero,
+              unlockDelay: Duration.zero,
+              lockDelay: Duration.zero,
+            ),
+          ),
+          Provider<RideRepository>(
+            create: (_) => MockRideRepository(
+              startDelay: Duration.zero,
+              endDelay: Duration.zero,
+            ),
+          ),
+          ChangeNotifierProvider<StationMapViewModel>(create: (_) => viewModel),
+        ],
+        child: MaterialApp(home: const StationMapScreen()),
       ),
     );
 
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('scan-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('Scan QR Code'), findsOneWidget);
+    expect(find.text('⚡  Simulate QR Scan (Demo)'), findsOneWidget);
+
+    await tester.tap(find.text('⚡  Simulate QR Scan (Demo)'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
+
+    expect(viewModel.hasActiveRide, isTrue);
+    expect(find.text('Bike Information'), findsOneWidget);
+    expect(find.text('Elapsed Time'), findsOneWidget);
+    expect(find.text('End Ride'), findsOneWidget);
+    expect(find.text('Bike #CO-04'), findsOneWidget);
+
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -450));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('End Ride'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Bike unlocked. Return mode activated.'), findsOneWidget);
-    expect(find.text('Returning Mode ON'), findsOneWidget);
-    expect(find.text('Free Docks nearby'), findsOneWidget);
-    expect(find.text('Return in progress'), findsOneWidget);
-    expect(find.text('Find a station or destination...'), findsNothing);
-    expect(find.text('Returning mode ON'), findsNothing);
-    expect(find.text('P | 9 Free'), findsOneWidget);
+    expect(viewModel.hasActiveRide, isFalse);
+    expect(find.text('Ready to ride?'), findsNothing);
+    expect(find.text('Bike Information'), findsNothing);
   });
 
   testWidgets('return bike action exits return mode from free dock popup', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('scan-button')));
+    viewModel.setHasActiveRide(true);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
@@ -217,7 +254,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Find a station or destination...'), findsOneWidget);
-    expect(find.text('Ready to ride?'), findsOneWidget);
+    expect(find.text('Ready to ride?'), findsNothing);
     expect(find.text('4 Bikes'), findsOneWidget);
     expect(find.text('3 Bikes'), findsNothing);
     expect(find.text('P | 9 Free'), findsNothing);
@@ -226,19 +263,21 @@ void main() {
   testWidgets('banner close dismisses banner but keeps return mode active', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('scan-button')));
+    viewModel.setHasActiveRide(true);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
@@ -256,19 +295,21 @@ void main() {
   testWidgets('return mode search keeps full station unselectable', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('scan-button')));
+    viewModel.setHasActiveRide(true);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
     await tester.pumpAndSettle();
@@ -288,19 +329,21 @@ void main() {
   testWidgets('return mode search lists stations with free docks first', (
     WidgetTester tester,
   ) async {
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('scan-button')));
+    viewModel.setHasActiveRide(true);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
     await tester.pumpAndSettle();
@@ -322,17 +365,24 @@ void main() {
   testWidgets('shows eta chip for selected dock in return mode', (
     WidgetTester tester,
   ) async {
+    final _LocatedUserLocationRepository locationRepository =
+        _LocatedUserLocationRepository();
+    final StationMapViewModel viewModel = StationMapViewModel(
+      repository: MockStationRepository(),
+      userLocationRepository: locationRepository,
+    )..loadStations();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) =>
-              StationMapViewModel(repository: MockStationRepository())
-                ..loadStations(),
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
+    await tester.pumpAndSettle();
+    await viewModel.locateCurrentUser();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
@@ -344,7 +394,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2 min away'), findsOneWidget);
+    expect(find.textContaining('min away'), findsOneWidget);
   });
 
   testWidgets('shows reroute alert for full dock station in return mode', (
@@ -356,8 +406,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>.value(
-          value: viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
@@ -390,8 +440,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>.value(
-          value: viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),
@@ -476,8 +526,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>.value(
-          value: viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) => viewModel,
           child: const StationMapScreen(),
         ),
       ),

@@ -22,4 +22,6 @@ abstract class InstantPaymentRepository {
   Future<List<InstantPaymentTransaction>> fetchInstantPaymentTransactions();
 
   Future<List<SubscriptionTransaction>> fetchSubscriptionTransactions();
+
+  Future<void> cancelSubscriptionTransaction(String transactionId);
 }

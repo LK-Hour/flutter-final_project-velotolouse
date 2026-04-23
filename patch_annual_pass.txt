@@ -1,0 +1,122 @@
+import 'dart:io';
+
+void main() {
+  var file = File('lib/ui/screens/subscription_plans/passes/annual_pass_screen.dart');
+  var content = file.readAsStringSync();
+  
+  final startText = '''              const SizedBox(height: 12),
+              ValueListenableBuilder<BankOption>(''';
+  
+  final endText = '''              const SizedBox(height: 8),
+              const Text(
+                'Billed once yearly · Cancel anytime',''';
+                
+  int startIndex = content.indexOf(startText);
+  int endIndex = content.indexOf(endText);
+  if (startIndex == -1 || endIndex == -1) {
+    print('Failed to patch annual');
+    return;
+  }
+  
+  final replacement = '''              const SizedBox(height: 12),
+              Consumer<SubscriptionPassViewModel>(
+                builder: (context, viewModel, _) {
+                  if (viewModel.hasActiveSubscription) {
+                    return ActiveSubscriptionStatus(viewModel: viewModel);
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ValueListenableBuilder<BankOption>(
+                        valueListenable: selectedSubscriptionBank,
+                        builder: (context, bank, _) {
+                          return SelectedBankCard(
+                            bank: bank,
+                            onChange: () async {
+                              final selected = await Navigator.of(context).push<BankOption>(
+                                MaterialPageRoute<BankOption>(
+                                  builder: (_) => SubscriptionBankSelectionScreen(
+                                    initialBankId: bank.id,
+                                  ),
+                                ),
+                              );
+
+                              if (selected != null) {
+                                selectedSubscriptionBank.value = selected;
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: viewModel.isProcessing
+                              ? null
+                              : () async {
+                                  final bank = selectedSubscriptionBank.value;
+                                  final success = await viewModel.subscribe(
+                                    planId: 'annual',
+                                    planLabel: 'Annual Pass',
+                                    amountUsd: 99,
+                                    bank: bank,
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  if (success) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => BookingConfirmationScreen(
+                                          paymentLabel: '\${bank.name} - KHQR',
+                                          amountLabel: '\$99',
+                                        ),
+                                      ),
+                                    );
+                                  } else if (viewModel.errorMessage != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(viewModel.errorMessage!),
+                                      ),
+                                    );
+                                    viewModel.clearError();
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF15B00),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: viewModel.isProcessing
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Subscribe • \$99 / year',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+''';
+
+  String newContent = content.substring(0, startIndex) + replacement + content.substring(endIndex);
+  file.writeAsStringSync(newContent);
+  print('Patched');
+}

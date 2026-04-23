@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../domain/model/subscription_plans/bank_option.dart';
+import '../../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
-import '../booking_confirmation_screen.dart';
+import '../widgets/active_subscription_status.dart';
+import '../subscription_success_screen.dart';
 import '../state/subscription_pass_bank_state.dart';
 import '../widgets/plan_feature_row.dart';
 import '../widgets/plan_type_chip.dart';
+import '../view_model/subscription_pass_view_model.dart';
 import '../widgets/selected_bank_card.dart';
 import 'annual_pass_screen.dart';
 import 'daily_pass_screen.dart';
@@ -14,6 +17,20 @@ import 'subscription_bank_selection_screen.dart';
 
 class MonthlyPassScreen extends StatelessWidget {
   const MonthlyPassScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<SubscriptionPassViewModel>(
+      create: (context) => SubscriptionPassViewModel(
+        repository: context.read<InstantPaymentRepository>(),
+      )..loadActiveSubscription(),
+      child: const _Body(),
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  const _Body();
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +114,10 @@ class MonthlyPassScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFCEDE5),
                         borderRadius: BorderRadius.circular(20),
@@ -185,13 +205,14 @@ class MonthlyPassScreen extends StatelessWidget {
                   return SelectedBankCard(
                     bank: bank,
                     onChange: () async {
-                      final selected = await Navigator.of(context).push<BankOption>(
-                        MaterialPageRoute<BankOption>(
-                          builder: (_) => SubscriptionBankSelectionScreen(
-                            initialBankId: bank.id,
-                          ),
-                        ),
-                      );
+                      final selected = await Navigator.of(context)
+                          .push<BankOption>(
+                            MaterialPageRoute<BankOption>(
+                              builder: (_) => SubscriptionBankSelectionScreen(
+                                initialBankId: bank.id,
+                              ),
+                            ),
+                          );
 
                       if (selected != null) {
                         selectedSubscriptionBank.value = selected;
@@ -201,59 +222,106 @@ class MonthlyPassScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final bank = selectedSubscriptionBank.value;
-                    try {
-                      await context
-                          .read<InstantPaymentRepository>()
-                          .createSubscriptionTransaction(
-                            planId: 'monthly',
-                            planLabel: 'Monthly Pass',
-                            amountUsd: 14.99,
-                            bank: bank,
-                          );
-                    } catch (_) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Failed to save subscription. Please try again.',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
+              Consumer<SubscriptionPassViewModel>(
+                builder: (context, viewModel, _) {
+                  return ActiveSubscriptionStatus(viewModel: viewModel);
+                },
+              ),
+              const SizedBox(height: 12),
+              Consumer<SubscriptionPassViewModel>(
+                builder: (context, viewModel, _) {
+                  final isSubscribeDisabled =
+                      viewModel.isProcessing || viewModel.hasActiveSubscription;
 
-                    if (!context.mounted) {
-                      return;
-                    }
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => BookingConfirmationScreen(
-                          paymentLabel: '${bank.name} - KHQR',
-                          amountLabel: '\$14.99',
+                  return SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isSubscribeDisabled
+                          ? null
+                          : () async {
+                              final bank = selectedSubscriptionBank.value;
+                              final success = await viewModel.subscribe(
+                                planId: 'monthly',
+                                planLabel: 'Monthly Pass',
+                                amountUsd: 14.99,
+                                bank: bank,
+                              );
+
+                              if (!context.mounted) return;
+
+                              if (success) {
+                                final subscription =
+                                    viewModel.activeSubscription;
+                                if (subscription == null) {
+                                  return;
+                                }
+
+                                final result = await Navigator.of(context)
+                                    .push<SubscriptionTransaction>(
+                                      MaterialPageRoute<
+                                        SubscriptionTransaction
+                                      >(
+                                        builder: (_) =>
+                                            SubscriptionSuccessScreen(
+                                              subscription: subscription,
+                                              planName: 'Monthly Pass',
+                                              amountPaid: '\$14.99',
+                                              paymentMethod:
+                                                  '${bank.name} - KHQR',
+                                            ),
+                                      ),
+                                    );
+
+                                if (!context.mounted) return;
+                                if (result != null) {
+                                  Navigator.of(context).pop(result);
+                                }
+                              } else if (viewModel.errorMessage != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(viewModel.errorMessage!),
+                                  ),
+                                );
+                                viewModel.clearError();
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF15B00),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        disabledBackgroundColor: const Color(0xFFE8E8E8),
+                        disabledForegroundColor: const Color(0xFF9D9D9D),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF15B00),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      child: viewModel.isProcessing
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : viewModel.hasActiveSubscription
+                          ? const Text(
+                              'Subscription Active',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            )
+                          : const Text(
+                              'Subscribe • \$14.99 / month',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
-                  ),
-                  child: const Text(
-                    'Subscribe • \$14.99 / month',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 8),
               const Text(

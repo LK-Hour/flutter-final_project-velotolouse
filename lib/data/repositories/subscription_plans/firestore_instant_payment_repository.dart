@@ -11,17 +11,24 @@ import '../../../domain/model/subscription_plans/instant_payment_transaction.dar
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
 import '../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
+import '../../../ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 
 class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
-  FirestoreInstantPaymentRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirestoreInstantPaymentRepository({
+    FirebaseFirestore? firestore,
+    SubscriptionRefreshNotifier? refreshNotifier,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _refreshNotifier = refreshNotifier;
 
   final FirebaseFirestore _firestore;
+  final SubscriptionRefreshNotifier? _refreshNotifier;
 
   @override
   Future<InstantPaymentData> fetchInstantPaymentData() async {
-    final summaryDoc =
-        await _firestore.collection('app_config').doc('instant_payment').get();
+    final summaryDoc = await _firestore
+        .collection('app_config')
+        .doc('instant_payment')
+        .get();
 
     final summaryDto = RidePaymentSummaryDto.fromFirestore(summaryDoc.data());
 
@@ -39,9 +46,7 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
     return InstantPaymentDataDto(
       summary: summaryDto,
       banks: bankDtos,
-    ).toDomain(
-      fallbackBanks: _defaultBanks,
-    );
+    ).toDomain(fallbackBanks: _defaultBanks);
   }
 
   @override
@@ -76,10 +81,12 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
     await _firestore
         .collection('subscription_transactions')
         .add(dto.toFirestoreMap());
+    _refreshNotifier?.markUpdated();
   }
 
   @override
-  Future<List<InstantPaymentTransaction>> fetchInstantPaymentTransactions() async {
+  Future<List<InstantPaymentTransaction>>
+  fetchInstantPaymentTransactions() async {
     final snapshot = await _firestore
         .collection('instant_payment_transactions')
         .orderBy('created_at', descending: true)
@@ -112,6 +119,15 @@ class FirestoreInstantPaymentRepository implements InstantPaymentRepository {
           ).toDomain(),
         )
         .toList(growable: false);
+  }
+
+  @override
+  Future<void> cancelSubscriptionTransaction(String transactionId) async {
+    await _firestore
+        .collection('subscription_transactions')
+        .doc(transactionId)
+        .delete();
+    _refreshNotifier?.markUpdated();
   }
 
   static const List<BankOption> _defaultBanks = [

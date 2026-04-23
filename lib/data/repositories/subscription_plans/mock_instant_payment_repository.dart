@@ -4,8 +4,13 @@ import '../../../domain/model/subscription_plans/instant_payment_transaction.dar
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
 import '../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
+import '../../../ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 
 class MockInstantPaymentRepository implements InstantPaymentRepository {
+  MockInstantPaymentRepository({SubscriptionRefreshNotifier? refreshNotifier})
+    : _refreshNotifier = refreshNotifier;
+
+  final SubscriptionRefreshNotifier? _refreshNotifier;
   final List<InstantPaymentTransaction> _transactions =
       <InstantPaymentTransaction>[];
   final List<SubscriptionTransaction> _subscriptionTransactions =
@@ -78,7 +83,8 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
   }
 
   @override
-  Future<List<InstantPaymentTransaction>> fetchInstantPaymentTransactions() async {
+  Future<List<InstantPaymentTransaction>>
+  fetchInstantPaymentTransactions() async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     return List<InstantPaymentTransaction>.unmodifiable(_transactions);
   }
@@ -103,11 +109,21 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
         createdAt: DateTime.now(),
       ),
     );
+    _refreshNotifier?.markUpdated();
   }
 
   @override
   Future<List<SubscriptionTransaction>> fetchSubscriptionTransactions() async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
-    return List<SubscriptionTransaction>.unmodifiable(_subscriptionTransactions);
+    return List<SubscriptionTransaction>.unmodifiable(
+      _subscriptionTransactions,
+    );
+  }
+
+  @override
+  Future<void> cancelSubscriptionTransaction(String transactionId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    _subscriptionTransactions.removeWhere((tx) => tx.id == transactionId);
+    _refreshNotifier?.markUpdated();
   }
 }
