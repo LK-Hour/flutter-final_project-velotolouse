@@ -288,7 +288,7 @@ class StationMapScreen extends StatelessWidget {
     final double bottomPanelHeight = viewModel.activeRideStartedAt == null
         ? 138
         : 176;
-    final double popupBottomOffset = bottomPanelHeight - 50;
+    final double popupBottomOffset = bottomPanelHeight + 12;
 
     return Scaffold(
       backgroundColor: AppColors.baseSurfaceAlt,
@@ -418,7 +418,6 @@ class StationMapScreen extends StatelessWidget {
                             : StationInfoPopup(
                                 station: selectedStation,
                                 isReturnMode: viewModel.isReturnMode,
-                                onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
                                   viewModel,
