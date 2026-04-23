@@ -42,7 +42,6 @@ dependencies:
   flutter_dotenv: ^5.2.1
   firebase_core: ^3.15.2
   cloud_firestore: ^5.6.11
-  mobile_scanner: ^3.5.0
   flutter_svg: ^2.0.10
 
   # The following adds the Cupertino Icons font to your application.

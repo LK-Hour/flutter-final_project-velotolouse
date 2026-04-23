@@ -2,7 +2,6 @@ import 'package:final_project_velotolouse/data/repositories/bikes/firebase_stati
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station_bike_inventory_item.dart';
 import 'package:final_project_velotolouse/domain/repositories/bikes/station_bike_inventory_repository.dart';
-import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:final_project_velotolouse/ui/widgets/animated_reveal_card.dart';
 import 'package:flutter/material.dart';
@@ -16,19 +15,6 @@ class StationBikeInventoryScreen extends StatelessWidget {
 
   final Station station;
   final StationBikeInventoryRepository? repository;
-
-  void _onScanBikePressed(BuildContext context, StationBikeInventoryItem item) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => QrScannerScreen(
-          showDemoScanButton: true,
-          bikeCode: item.bikeCode ?? item.slotId,
-          stationId: station.id,
-          stationName: station.name,
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,8 +187,6 @@ class StationBikeInventoryScreen extends StatelessWidget {
                               child: _BikeSlotRow(
                                 item: entry.value,
                                 delay: Duration(milliseconds: 35 * entry.key),
-                                onScanTap: () =>
-                                    _onScanBikePressed(context, entry.value),
                               ),
                             ),
                           ),
@@ -220,11 +204,10 @@ class StationBikeInventoryScreen extends StatelessWidget {
 }
 
 class _BikeSlotRow extends StatelessWidget {
-  const _BikeSlotRow({required this.item, required this.delay, this.onScanTap});
+  const _BikeSlotRow({required this.item, required this.delay});
 
   final StationBikeInventoryItem item;
   final Duration delay;
-  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +257,7 @@ class _BikeSlotRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.bikeCode ?? 'Unavailable bike',
+                    item.bikeCode ?? item.slotId,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -294,7 +277,7 @@ class _BikeSlotRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        isAvailable ? 'Available' : 'Unavailable bike',
+                        isAvailable ? 'Available' : 'Empty slot',
                         style: TextStyle(
                           color: isAvailable
                               ? AppColors.success
@@ -309,27 +292,24 @@ class _BikeSlotRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            SizedBox(
-              height: 30,
-              child: FilledButton(
-                onPressed: isAvailable ? onScanTap : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF15B00),
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: const Color(0xFFE1E1E1),
-                  disabledForegroundColor: const Color(0xFF9A9A9A),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+            FilledButton(
+              onPressed: isAvailable ? () {} : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFF15B00),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFFE1E1E1),
+                disabledForegroundColor: const Color(0xFF9A9A9A),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
-                child: const Text(
-                  'Scan',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
                 ),
+              ),
+              child: const Text(
+                'Scan',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
           ],

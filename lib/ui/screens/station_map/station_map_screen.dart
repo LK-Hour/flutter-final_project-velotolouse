@@ -3,9 +3,9 @@ import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
@@ -288,7 +288,7 @@ class StationMapScreen extends StatelessWidget {
     final double bottomPanelHeight = viewModel.activeRideStartedAt == null
         ? 138
         : 176;
-    final double popupBottomOffset = bottomPanelHeight + 12;
+    final double popupBottomOffset = bottomPanelHeight - 50;
 
     return Scaffold(
       backgroundColor: AppColors.baseSurfaceAlt,
@@ -418,6 +418,7 @@ class StationMapScreen extends StatelessWidget {
                             : StationInfoPopup(
                                 station: selectedStation,
                                 isReturnMode: viewModel.isReturnMode,
+                                onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
                                   viewModel,

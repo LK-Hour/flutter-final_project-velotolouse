@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fmap;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as latlng;
-import 'dart:math' as math;
 
 class StationGoogleMapCanvas extends StatefulWidget {
   const StationGoogleMapCanvas({
@@ -100,11 +99,11 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
       mapType: gmaps.MapType.normal,
-      onTap: (gmaps.LatLng _) => widget.onMapTap(),
       onMapCreated: (gmaps.GoogleMapController controller) {
         _googleMapController = controller;
         _moveMapViewToCenter();
       },
+      onTap: (gmaps.LatLng _) => widget.onMapTap(),
       markers: _buildGoogleMarkers(),
       polylines: _buildGoogleRoutePolylines(),
     );
@@ -122,11 +121,11 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       options: fmap.MapOptions(
         initialCenter: currentCenter,
         initialZoom: 13.2,
-        onTap: (_, __) => widget.onMapTap(),
         onMapReady: () {
           _isTileMapReady = true;
           _moveMapViewToCenter();
         },
+        onTap: (_, __) => widget.onMapTap(),
       ),
       children: <Widget>[
         fmap.TileLayer(
@@ -146,13 +145,6 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
         builder: (BuildContext context, BoxConstraints constraints) {
           return Stack(
             children: <Widget>[
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.onMapTap,
-                  child: const SizedBox.expand(),
-                ),
-              ),
               for (final Station station in widget.stations)
                 () {
                   final bool isSelected =
@@ -365,66 +357,8 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     if (!widget.isReturnMode || !isSelected || !isAvailable) {
       return null;
     }
-
-    final int? estimatedMinutes = _estimatedMinutesToSelectedStation();
-    if (estimatedMinutes == null || estimatedMinutes <= 0) {
-      return null;
-    }
-
-    return '$estimatedMinutes min away';
+    return '2 min away';
   }
-
-  int? _estimatedMinutesToSelectedStation() {
-    final Station? selectedStation = widget.selectedStation;
-    if (selectedStation == null) {
-      return null;
-    }
-
-    final List<GeoCoordinate> route = widget.routePath;
-    double distanceMeters;
-
-    if (route.length >= 2) {
-      distanceMeters = 0;
-      for (int index = 0; index < route.length - 1; index += 1) {
-        distanceMeters += _distanceMeters(route[index], route[index + 1]);
-      }
-    } else if (widget.currentUserLocation != null) {
-      distanceMeters = _distanceMeters(
-        widget.currentUserLocation!,
-        GeoCoordinate(
-          latitude: selectedStation.latitude,
-          longitude: selectedStation.longitude,
-        ),
-      );
-    } else {
-      return null;
-    }
-
-    const double averageCyclingSpeedKmh = 12;
-    final double minutes =
-        (distanceMeters / 1000) / averageCyclingSpeedKmh * 60;
-    return math.max(1, minutes.ceil());
-  }
-
-  double _distanceMeters(GeoCoordinate a, GeoCoordinate b) {
-    const double earthRadiusMeters = 6371000;
-    final double lat1 = _degreesToRadians(a.latitude);
-    final double lat2 = _degreesToRadians(b.latitude);
-    final double deltaLat = _degreesToRadians(b.latitude - a.latitude);
-    final double deltaLng = _degreesToRadians(b.longitude - a.longitude);
-
-    final double haversine =
-        math.sin(deltaLat / 2) * math.sin(deltaLat / 2) +
-        math.cos(lat1) *
-            math.cos(lat2) *
-            math.sin(deltaLng / 2) *
-            math.sin(deltaLng / 2);
-    final double angularDistance =
-        2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
-    return earthRadiusMeters * angularDistance;
-  }
-
-  double _degreesToRadians(double degrees) => degrees * math.pi / 180;
 
   bool _hasMapCenterChanged(GeoCoordinate oldValue, GeoCoordinate newValue) {
     return oldValue.latitude != newValue.latitude ||

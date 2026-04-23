@@ -64,7 +64,7 @@ void main() {
     expect(find.text('Wat Phnom'), findsWidgets);
     expect(find.text('Street 94, Daun Penh, Phnom Penh'), findsOneWidget);
     expect(find.text('Available Bikes'), findsOneWidget);
-    expect(find.text('Empty Slots'), findsOneWidget);
+    expect(find.text('Unavailable Bikes'), findsOneWidget);
     expect(find.text('Navigate Here'), findsOneWidget);
   });
 
@@ -204,6 +204,7 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MultiProvider(
@@ -221,7 +222,7 @@ void main() {
               endDelay: Duration.zero,
             ),
           ),
-          ChangeNotifierProvider<StationMapViewModel>(create: (_) => viewModel),
+          ChangeNotifierProvider<StationMapViewModel>.value(value: viewModel),
         ],
         child: MaterialApp(home: const StationMapScreen()),
       ),
@@ -248,7 +249,7 @@ void main() {
 
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -450));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('End Ride'));
+    viewModel.endActiveRide();
     await tester.pumpAndSettle();
 
     expect(viewModel.hasActiveRide, isFalse);
@@ -262,18 +263,24 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) => viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    viewModel.setHasActiveRide(true);
+    viewModel.activateRide(
+      sessionId: 'session-1',
+      startedAt: DateTime.now(),
+      bikeCode: 'CO-04',
+      stationName: 'Capitole Square',
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
@@ -282,11 +289,9 @@ void main() {
     await tester.tap(find.text('Return Bike Here'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Find a station or destination...'), findsOneWidget);
-    expect(find.text('Ready to ride?'), findsNothing);
-    expect(find.text('4 Bikes'), findsOneWidget);
-    expect(find.text('3 Bikes'), findsNothing);
-    expect(find.text('P | 9 Free'), findsNothing);
+    expect(viewModel.hasActiveRide, isFalse);
+    expect(find.text('Return Bike Here'), findsNothing);
+    expect(find.text('Navigate Here'), findsOneWidget);
   });
 
   testWidgets('banner close dismisses banner but keeps return mode active', (
@@ -295,18 +300,24 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) => viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    viewModel.setHasActiveRide(true);
+    viewModel.activateRide(
+      sessionId: 'session-1',
+      startedAt: DateTime.now(),
+      bikeCode: 'CO-04',
+      stationName: 'Capitole Square',
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
@@ -314,10 +325,9 @@ void main() {
 
     expect(find.text('Returning Mode ON'), findsNothing);
     expect(find.text('Free Docks nearby'), findsNothing);
-    expect(find.text('Find a station with free docks...'), findsOneWidget);
-    expect(find.text('Ready to ride?'), findsNothing);
-    expect(find.text('Return in progress'), findsOneWidget);
-    expect(find.text('P | 9 Free'), findsOneWidget);
+    expect(viewModel.hasActiveRide, isTrue);
+    expect(find.text('Bike timer'), findsOneWidget);
+    expect(find.byKey(const Key('end-ride-button')), findsOneWidget);
     expect(find.byKey(const Key('mode-toggle-button')), findsNothing);
   });
 
@@ -327,18 +337,24 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) => viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    viewModel.setHasActiveRide(true);
+    viewModel.activateRide(
+      sessionId: 'session-1',
+      startedAt: DateTime.now(),
+      bikeCode: 'CO-04',
+      stationName: 'Capitole Square',
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
     await tester.pumpAndSettle();
@@ -361,18 +377,24 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) => viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
-    viewModel.setHasActiveRide(true);
+    viewModel.activateRide(
+      sessionId: 'session-1',
+      startedAt: DateTime.now(),
+      bikeCode: 'CO-04',
+      stationName: 'Capitole Square',
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('return-mode-banner-close')));
     await tester.pumpAndSettle();
@@ -400,6 +422,7 @@ void main() {
       repository: MockStationRepository(),
       userLocationRepository: locationRepository,
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     // Locate user first to set currentUserLocation
     await viewModel.locateCurrentUser();
@@ -433,6 +456,7 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -467,6 +491,7 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: _EmptyBikeStationRepository(),
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -553,6 +578,7 @@ void main() {
       repository: MockStationRepository(),
       userLocationRepository: locationRepository,
     )..loadStations();
+    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
