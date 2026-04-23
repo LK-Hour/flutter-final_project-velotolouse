@@ -3,6 +3,7 @@ import 'package:final_project_velotolouse/domain/repositories/rides/ride_reposit
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
+import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:final_project_velotolouse/ui/widgets/animated_reveal_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -71,6 +72,46 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   void _onTick() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _showRideCompletionModal() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return RideCompletionModal(
+          bikeCode: widget.bikeCode,
+          stationName: widget.stationName,
+          rideDuration: _formattedTime,
+          onDone: () {
+            Navigator.of(dialogContext).pop();
+            Navigator.popUntil(
+              context,
+              (Route<dynamic> route) => route.isFirst,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleEndRidePressed() async {
+    final rideRepo = context.read<RideRepository>();
+    final bikeRepo = context.read<BikeRepository>();
+    final stationMapViewModel = context.read<StationMapViewModel>();
+
+    _rideTimer.pause();
+    await Future.wait([
+      rideRepo.endRide(widget.sessionId),
+      bikeRepo.lockBike(widget.bikeCode),
+    ]);
+    stationMapViewModel.endActiveRide();
+
+    if (!mounted) {
+      return;
+    }
+
+    await _showRideCompletionModal();
   }
 
   @override
@@ -353,21 +394,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () async {
-                                final rideRepo = context.read<RideRepository>();
-                                final bikeRepo = context.read<BikeRepository>();
-                                final stationMapViewModel = context
-                                    .read<StationMapViewModel>();
-                                _rideTimer.pause();
-                                await Future.wait([
-                                  rideRepo.endRide(widget.sessionId),
-                                  bikeRepo.lockBike(widget.bikeCode),
-                                ]);
-                                stationMapViewModel.endActiveRide();
-                                if (mounted) {
-                                  Navigator.popUntil(context, (r) => r.isFirst);
-                                }
-                              },
+                              onPressed: _handleEndRidePressed,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color.fromARGB(
                                   255,

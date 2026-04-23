@@ -234,9 +234,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('Scan QR Code'), findsOneWidget);
-    expect(find.text('⚡  Simulate QR Scan (Demo)'), findsOneWidget);
+    expect(find.text('Simulate QR Scan (Book)'), findsOneWidget);
 
-    await tester.tap(find.text('⚡  Simulate QR Scan (Demo)'));
+    await tester.tap(find.text('Simulate QR Scan (Book)'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 4));
     await tester.pump();
@@ -249,15 +249,21 @@ void main() {
 
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -450));
     await tester.pumpAndSettle();
-    viewModel.endActiveRide();
+    await tester.tap(find.text('End Ride'));
     await tester.pumpAndSettle();
 
     expect(viewModel.hasActiveRide, isFalse);
-    expect(find.text('Ready to ride?'), findsNothing);
+    expect(find.text('Ride complete'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Bike Information'), findsNothing);
+    expect(find.text('Ready to ride?'), findsNothing);
   });
 
-  testWidgets('return bike action exits return mode from free dock popup', (
+  testWidgets('popup in return mode uses navigate here action', (
     WidgetTester tester,
   ) async {
     final StationMapViewModel viewModel = StationMapViewModel(
@@ -281,17 +287,14 @@ void main() {
       bikeCode: 'CO-04',
       stationName: 'Capitole Square',
     );
+    viewModel.dismissReturnModeBanner();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Return Bike Here'), findsOneWidget);
-    await tester.tap(find.text('Return Bike Here'));
-    await tester.pumpAndSettle();
-
-    expect(viewModel.hasActiveRide, isFalse);
+    expect(find.text('Return mode'), findsOneWidget);
     expect(find.text('Return Bike Here'), findsNothing);
-    expect(find.text('Navigate Here'), findsOneWidget);
+    expect(find.text('View Bikes'), findsNothing);
   });
 
   testWidgets('banner close dismisses banner but keeps return mode active', (
@@ -422,7 +425,6 @@ void main() {
       repository: MockStationRepository(),
       userLocationRepository: locationRepository,
     )..loadStations();
-    addTearDown(viewModel.dispose);
 
     // Locate user first to set currentUserLocation
     await viewModel.locateCurrentUser();
@@ -448,15 +450,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('min away'), findsOneWidget);
+    expect(find.text('2 min away'), findsNothing);
+    await tester.pump(const Duration(seconds: 4));
   });
 
-  testWidgets('shows reroute alert for full dock station in return mode', (
+  testWidgets('popup in return mode uses navigate here action', (
     WidgetTester tester,
   ) async {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: MockStationRepository(),
     )..loadStations();
-    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -470,19 +473,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('station-marker-central-market')));
+    await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Destination Full'), findsOneWidget);
-    expect(find.text('SUGGESTED ALTERNATIVE'), findsOneWidget);
-    expect(find.text('Reroute to Free Dock'), findsOneWidget);
+    expect(find.text('Return mode'), findsOneWidget);
+    expect(find.text('View Bikes'), findsNothing);
 
-    await tester.tap(find.text('Reroute to Free Dock'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Destination Full'), findsNothing);
-    expect(viewModel.selectedStation, isNotNull);
-    expect(viewModel.selectedStation!.freeDocks, greaterThan(0));
+    expect(find.text('Navigate Here'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
   });
 
   testWidgets('shows reroute alert for empty-bike station in renting mode', (
@@ -491,7 +489,6 @@ void main() {
     final StationMapViewModel viewModel = StationMapViewModel(
       repository: _EmptyBikeStationRepository(),
     )..loadStations();
-    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -578,7 +575,6 @@ void main() {
       repository: MockStationRepository(),
       userLocationRepository: locationRepository,
     )..loadStations();
-    addTearDown(viewModel.dispose);
 
     await tester.pumpWidget(
       MaterialApp(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fmap;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as latlng;
+import 'dart:math' as math;
 
 class StationGoogleMapCanvas extends StatefulWidget {
   const StationGoogleMapCanvas({
@@ -140,11 +141,19 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
 
   Widget _buildFallbackCanvas() {
     return Container(
+      key: const ValueKey<String>('fallback-map-canvas'),
       color: AppColors.mapBackground,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           return Stack(
             children: <Widget>[
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onMapTap,
+                  child: const SizedBox.expand(),
+                ),
+              ),
               for (final Station station in widget.stations)
                 () {
                   final bool isSelected =
@@ -154,6 +163,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
                     key: Key('station-marker-${station.id}'),
                     label: _markerLabel(station),
                     etaLabel: _etaLabel(
+                      station: station,
                       isSelected: isSelected,
                       isAvailable: isAvailable,
                     ),
@@ -272,6 +282,7 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       final bool isAvailable = _hasAvailability(station);
       final String label = _markerLabel(station);
       final String? etaLabel = _etaLabel(
+        station: station,
         isSelected: isSelected,
         isAvailable: isAvailable,
       );
@@ -353,12 +364,93 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
     return 'P | ${station.freeDocks} Free';
   }
 
-  String? _etaLabel({required bool isSelected, required bool isAvailable}) {
+  String? _etaLabel({
+    required Station station,
+    required bool isSelected,
+    required bool isAvailable,
+  }) {
     if (!widget.isReturnMode || !isSelected || !isAvailable) {
       return null;
     }
-    return '2 min away';
+
+    final double distanceMeters = _estimateDistanceMeters(station);
+    if (distanceMeters <= 0) {
+      return null;
+    }
+
+    final int minutes = math.max(1, (distanceMeters / 250).ceil());
+    return '$minutes min away';
   }
+
+  double _estimateDistanceMeters(Station station) {
+    final GeoCoordinate? origin = widget.currentUserLocation;
+    if (origin == null) {
+      return 0;
+    }
+
+    final GeoCoordinate destination = GeoCoordinate(
+      latitude: station.latitude,
+      longitude: station.longitude,
+    );
+
+    if (_routeMatchesStation(station)) {
+      return _pathDistanceMeters(widget.routePath);
+    }
+
+    return _distanceMeters(origin, destination);
+  }
+
+  bool _routeMatchesStation(Station station) {
+    if (widget.routePath.length < 2 || widget.currentUserLocation == null) {
+      return false;
+    }
+
+    final GeoCoordinate firstPoint = widget.routePath.first;
+    final GeoCoordinate lastPoint = widget.routePath.last;
+    final GeoCoordinate origin = widget.currentUserLocation!;
+    final GeoCoordinate destination = GeoCoordinate(
+      latitude: station.latitude,
+      longitude: station.longitude,
+    );
+
+    return _isClose(firstPoint, origin) && _isClose(lastPoint, destination);
+  }
+
+  double _pathDistanceMeters(List<GeoCoordinate> path) {
+    if (path.length < 2) {
+      return 0;
+    }
+
+    double total = 0;
+    for (var index = 0; index < path.length - 1; index += 1) {
+      total += _distanceMeters(path[index], path[index + 1]);
+    }
+    return total;
+  }
+
+  double _distanceMeters(GeoCoordinate start, GeoCoordinate end) {
+    const double earthRadiusMeters = 6371000;
+    final double lat1 = _degToRad(start.latitude);
+    final double lat2 = _degToRad(end.latitude);
+    final double deltaLat = _degToRad(end.latitude - start.latitude);
+    final double deltaLng = _degToRad(end.longitude - start.longitude);
+
+    final double a =
+        math.sin(deltaLat / 2) * math.sin(deltaLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(deltaLng / 2) *
+            math.sin(deltaLng / 2);
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusMeters * c;
+  }
+
+  bool _isClose(GeoCoordinate a, GeoCoordinate b) {
+    return (a.latitude - b.latitude).abs() < 0.0003 &&
+        (a.longitude - b.longitude).abs() < 0.0003;
+  }
+
+  double _degToRad(double degrees) => degrees * math.pi / 180;
 
   bool _hasMapCenterChanged(GeoCoordinate oldValue, GeoCoordinate newValue) {
     return oldValue.latitude != newValue.latitude ||

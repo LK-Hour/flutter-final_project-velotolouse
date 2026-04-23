@@ -14,15 +14,11 @@ class StationInfoPopup extends StatelessWidget {
     required this.station,
     required this.isReturnMode,
     required this.onNavigate,
-    required this.onReturnBike,
-    this.onViewBikes,
   });
 
   final Station station;
   final bool isReturnMode;
   final VoidCallback onNavigate;
-  final VoidCallback onReturnBike;
-  final VoidCallback? onViewBikes;
 
   void _onScanBikePressed(BuildContext context, StationBikeInventoryItem item) {
     Navigator.of(context).push(
@@ -88,19 +84,17 @@ class StationInfoPopup extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              if (isReturnMode)
-                ...<Widget>[
-                  _ReturnModeSummary(station: station),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: onReturnBike,
-                      child: const Text('Return Bike'),
-                    ),
+              if (isReturnMode) ...<Widget>[
+                _ReturnModeSummary(station: station),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: onNavigate,
+                    child: const Text('Navigate Here'),
                   ),
-                ]
-              else ...<Widget>[
+                ),
+              ] else ...<Widget>[
                 _BikeInventoryPreview(
                   station: station,
                   repository: bikeRepository,
@@ -108,8 +102,6 @@ class StationInfoPopup extends StatelessWidget {
                       _onScanBikePressed(context, item),
                 ),
                 const SizedBox(height: 10),
-              ],
-              if (!isReturnMode) ...<Widget>[
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -120,16 +112,6 @@ class StationInfoPopup extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (onViewBikes != null) ...<Widget>[
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: onViewBikes,
-                      child: const Text('View Bikes'),
-                    ),
-                  ),
-                ],
               ],
             ],
           ),

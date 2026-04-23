@@ -11,13 +11,14 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner_transition.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/station_bike_inventory_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
+import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 class StationMapScreen extends StatelessWidget {
   const StationMapScreen({super.key});
@@ -93,6 +94,8 @@ class StationMapScreen extends StatelessWidget {
   ) async {
     final String? sessionId = viewModel.activeRideSessionId;
     final DateTime? startedAt = viewModel.activeRideStartedAt;
+    final String? bikeCode = viewModel.activeRideBikeCode;
+    final String? stationName = viewModel.activeRideStationName;
     if (sessionId == null || startedAt == null) {
       return;
     }
@@ -111,9 +114,21 @@ class StationMapScreen extends StatelessWidget {
       if (!context.mounted) return;
 
       viewModel.endActiveRide();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ride ended successfully.')));
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return RideCompletionModal(
+            bikeCode: bikeCode ?? 'Unknown bike',
+            stationName: stationName ?? 'Unknown station',
+            rideDuration: _formatRideDuration(startedAt),
+            onDone: () {
+              Navigator.of(dialogContext).pop();
+            },
+          );
+        },
+      );
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -179,66 +194,6 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _onReturnBikePressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-    Station station,
-  ) async {
-    final String? sessionId = viewModel.activeRideSessionId;
-    final String? bikeCode = viewModel.activeRideBikeCode;
-    if (sessionId == null || bikeCode == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No active ride to return.')),
-      );
-      return;
-    }
-
-    final bool isStationFull = viewModel.isReturnMode
-        ? viewModel.showFullStationRerouteAlert
-        : station.freeDocks <= 0;
-    if (isStationFull) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This station is full. Please choose another dock.'),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final rideRepo = context.read<RideRepository>();
-      final bikeRepo = context.read<BikeRepository>();
-      final activeRide = await rideRepo.getActiveRide();
-      if (activeRide == null) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No active ride to return.')),
-        );
-        return;
-      }
-
-      await Future.wait([
-        rideRepo.endRide(sessionId),
-        bikeRepo.lockBike(bikeCode),
-      ]);
-
-      if (!context.mounted) return;
-
-      viewModel.endActiveRide();
-      await viewModel.loadStations();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bike returned successfully.')),
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to return bike. Please try again.'),
-        ),
-      );
-    }
-  }
-
   void _onRerouteToDockPressed(
     BuildContext context,
     StationMapViewModel viewModel,
@@ -267,18 +222,18 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
-  void _onViewBikesPressed(BuildContext context, Station station) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => StationBikeInventoryScreen(station: station),
-      ),
-    );
-  }
-
   void _onProfilePressed(BuildContext context) {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
+  }
+
+  String _formatRideDuration(DateTime startedAt) {
+    final Duration elapsed = DateTime.now().difference(startedAt);
+    final int hours = elapsed.inHours;
+    final int minutes = elapsed.inMinutes.remainder(60);
+    final int seconds = elapsed.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -421,15 +376,6 @@ class StationMapScreen extends StatelessWidget {
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
                                   viewModel,
-                                  selectedStation,
-                                ),
-                                onReturnBike: () => _onReturnBikePressed(
-                                  context,
-                                  viewModel,
-                                  selectedStation,
-                                ),
-                                onViewBikes: () => _onViewBikesPressed(
-                                  context,
                                   selectedStation,
                                 ),
                               ),
