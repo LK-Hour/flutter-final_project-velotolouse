@@ -5,9 +5,9 @@ class BookingConfirmationScreen extends StatelessWidget {
     super.key,
     required this.paymentLabel,
     required this.amountLabel,
-    this.rideId = '#KH82918',
+    this.rideId = '#TOPUP-82918',
     this.station = 'PP Central',
-    this.bike = 'Standard Bike',
+    this.bike = 'Top-up only',
   });
 
   final String paymentLabel;
@@ -61,12 +61,12 @@ class BookingConfirmationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'You\'re all set!',
+                'Top-up successful!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFF212121),
                   fontWeight: FontWeight.w800,
-                  fontSize: 39,
+                  fontSize: 34,
                 ),
               ),
               const SizedBox(height: 6),
@@ -75,15 +75,8 @@ class BookingConfirmationScreen extends StatelessWidget {
                 text: const TextSpan(
                   style: TextStyle(color: Color(0xFFB3B3B3), fontSize: 18),
                   children: [
-                    TextSpan(text: 'Bike reserved at PP Central Station.\n'),
-                    TextSpan(text: 'Pick up within '),
-                    TextSpan(
-                      text: '10 minutes',
-                      style: TextStyle(
-                        color: Color(0xFFF15B00),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    TextSpan(text: 'Your instant top-up has been completed.\n'),
+                    TextSpan(text: 'Please return to scan the bike again.'),
                   ],
                 ),
               ),
@@ -98,7 +91,10 @@ class BookingConfirmationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEEEEE),
                   borderRadius: BorderRadius.circular(12),
@@ -125,7 +121,10 @@ class BookingConfirmationScreen extends StatelessWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF15B00),
                     foregroundColor: Colors.white,
@@ -135,7 +134,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Unlock My Bike',
+                    'Back to Scan',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                 ),
@@ -146,7 +145,10 @@ class BookingConfirmationScreen extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFF15B00), width: 1.3),
+                    side: const BorderSide(
+                      color: Color(0xFFF15B00),
+                      width: 1.3,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -184,10 +186,7 @@ class _ReceiptRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFFBABABA),
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Color(0xFFBABABA), fontSize: 13),
           ),
         ),
         Text(

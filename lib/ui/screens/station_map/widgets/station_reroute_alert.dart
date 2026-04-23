@@ -48,14 +48,14 @@ class StationRerouteAlert extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
                   ),
                 ),
               ),

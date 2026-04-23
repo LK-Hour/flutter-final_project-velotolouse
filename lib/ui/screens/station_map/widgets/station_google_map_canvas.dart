@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_marker.dart';
@@ -9,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fmap;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as latlng;
+import 'dart:math' as math;
 
 class StationGoogleMapCanvas extends StatefulWidget {
   const StationGoogleMapCanvas({
@@ -37,7 +36,6 @@ class StationGoogleMapCanvas extends StatefulWidget {
   final Map<String, Offset> fallbackMarkerPositions;
   static const String _osmTileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  static const double _averageBikeSpeedKmh = 15.0;
 
   @override
   State<StationGoogleMapCanvas> createState() => _StationGoogleMapCanvasState();
@@ -102,11 +100,11 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
       mapType: gmaps.MapType.normal,
+      onTap: (gmaps.LatLng _) => widget.onMapTap(),
       onMapCreated: (gmaps.GoogleMapController controller) {
         _googleMapController = controller;
         _moveMapViewToCenter();
       },
-      onTap: (_) => widget.onMapTap(),
       markers: _buildGoogleMarkers(),
       polylines: _buildGoogleRoutePolylines(),
     );
@@ -124,11 +122,11 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       options: fmap.MapOptions(
         initialCenter: currentCenter,
         initialZoom: 13.2,
+        onTap: (_, __) => widget.onMapTap(),
         onMapReady: () {
           _isTileMapReady = true;
           _moveMapViewToCenter();
         },
-        onTap: (_, _) => widget.onMapTap(),
       ),
       children: <Widget>[
         fmap.TileLayer(
@@ -142,53 +140,55 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
   }
 
   Widget _buildFallbackCanvas() {
-    return GestureDetector(
-      key: const Key('fallback-map-canvas'),
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onMapTap,
-      child: Container(
-        color: AppColors.mapBackground,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            return Stack(
-              children: <Widget>[
-                for (final Station station in widget.stations)
-                  () {
-                    final bool isSelected =
-                        widget.selectedStation?.id == station.id;
-                    final bool isAvailable = _hasAvailability(station);
-                    return StationMarkerWidget(
-                      key: Key('station-marker-${station.id}'),
-                      label: _markerLabel(station),
-                      etaLabel: _etaLabel(
-                        isSelected: isSelected,
-                        isAvailable: isAvailable,
-                      ),
-                      isAvailableInCurrentMode: isAvailable,
-                      isReturnMode: widget.isReturnMode,
+    return Container(
+      color: AppColors.mapBackground,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onMapTap,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              for (final Station station in widget.stations)
+                () {
+                  final bool isSelected =
+                      widget.selectedStation?.id == station.id;
+                  final bool isAvailable = _hasAvailability(station);
+                  return StationMarkerWidget(
+                    key: Key('station-marker-${station.id}'),
+                    label: _markerLabel(station),
+                    etaLabel: _etaLabel(
                       isSelected: isSelected,
-                      mapPosition:
-                          widget.fallbackMarkerPositions[station.id] ??
-                          const Offset(0.5, 0.5),
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
-                      onTap: () => widget.onStationTap(station.id),
-                    );
-                  }(),
-                if (widget.currentUserLocation != null)
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: Align(
-                        child: _CurrentLocationMarker(
-                          markerKey: Key('current-location-fallback-marker'),
-                        ),
+                      isAvailable: isAvailable,
+                    ),
+                    isAvailableInCurrentMode: isAvailable,
+                    isReturnMode: widget.isReturnMode,
+                    isSelected: isSelected,
+                    mapPosition:
+                        widget.fallbackMarkerPositions[station.id] ??
+                        const Offset(0.5, 0.5),
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    onTap: () => widget.onStationTap(station.id),
+                  );
+                }(),
+              if (widget.currentUserLocation != null)
+                const Positioned.fill(
+                  child: IgnorePointer(
+                    child: Align(
+                      child: _CurrentLocationMarker(
+                        markerKey: Key('current-location-fallback-marker'),
                       ),
                     ),
                   ),
-              ],
-            );
-          },
-        ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -366,56 +366,65 @@ class _StationGoogleMapCanvasState extends State<StationGoogleMapCanvas> {
       return null;
     }
 
-    if (widget.currentUserLocation == null ||
-        widget.selectedStation == null) {
+    final int? estimatedMinutes = _estimatedMinutesToSelectedStation();
+    if (estimatedMinutes == null || estimatedMinutes <= 0) {
       return null;
     }
 
-    final int minutes = _calculateEtaMinutes(
-      widget.currentUserLocation!,
-      widget.selectedStation!,
-    );
-
-    return '$minutes min away';
+    return '$estimatedMinutes min away';
   }
 
-  int _calculateEtaMinutes(GeoCoordinate userLocation, Station station) {
-    final double distanceKm = _calculateDistanceKm(
-      userLocation.latitude,
-      userLocation.longitude,
-      station.latitude,
-      station.longitude,
-    );
+  int? _estimatedMinutesToSelectedStation() {
+    final Station? selectedStation = widget.selectedStation;
+    if (selectedStation == null) {
+      return null;
+    }
 
-    final double timeHours = distanceKm / StationGoogleMapCanvas._averageBikeSpeedKmh;
-    final int timeMinutes = (timeHours * 60).ceil();
+    final List<GeoCoordinate> route = widget.routePath;
+    double distanceMeters;
 
-    return math.max(1, timeMinutes);
+    if (route.length >= 2) {
+      distanceMeters = 0;
+      for (int index = 0; index < route.length - 1; index += 1) {
+        distanceMeters += _distanceMeters(route[index], route[index + 1]);
+      }
+    } else if (widget.currentUserLocation != null) {
+      distanceMeters = _distanceMeters(
+        widget.currentUserLocation!,
+        GeoCoordinate(
+          latitude: selectedStation.latitude,
+          longitude: selectedStation.longitude,
+        ),
+      );
+    } else {
+      return null;
+    }
+
+    const double averageCyclingSpeedKmh = 12;
+    final double minutes =
+        (distanceMeters / 1000) / averageCyclingSpeedKmh * 60;
+    return math.max(1, minutes.ceil());
   }
 
-  double _calculateDistanceKm(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
-    const double earthRadiusKm = 6371.0;
-    final double dLat = _degreesToRadians(lat2 - lat1);
-    final double dLon = _degreesToRadians(lon2 - lon1);
+  double _distanceMeters(GeoCoordinate a, GeoCoordinate b) {
+    const double earthRadiusMeters = 6371000;
+    final double lat1 = _degreesToRadians(a.latitude);
+    final double lat2 = _degreesToRadians(b.latitude);
+    final double deltaLat = _degreesToRadians(b.latitude - a.latitude);
+    final double deltaLng = _degreesToRadians(b.longitude - a.longitude);
 
-    final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_degreesToRadians(lat1)) *
-            math.cos(_degreesToRadians(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-
-    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadiusKm * c;
+    final double haversine =
+        math.sin(deltaLat / 2) * math.sin(deltaLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(deltaLng / 2) *
+            math.sin(deltaLng / 2);
+    final double angularDistance =
+        2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+    return earthRadiusMeters * angularDistance;
   }
 
-  double _degreesToRadians(double degrees) {
-    return degrees * math.pi / 180.0;
-  }
+  double _degreesToRadians(double degrees) => degrees * math.pi / 180;
 
   bool _hasMapCenterChanged(GeoCoordinate oldValue, GeoCoordinate newValue) {
     return oldValue.latitude != newValue.latitude ||

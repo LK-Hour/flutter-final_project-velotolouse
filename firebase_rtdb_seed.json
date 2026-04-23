@@ -1,0 +1,1385 @@
+{
+  "bikeInventory": {
+    "BK-01": {
+      "bikeCode": "BK-01",
+      "slotId": "BK-01",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-02": {
+      "bikeCode": "BK-02",
+      "slotId": "BK-02",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-03": {
+      "bikeCode": "BK-03",
+      "slotId": "BK-03",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-04": {
+      "bikeCode": "BK-04",
+      "slotId": "BK-04",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-05": {
+      "bikeCode": "BK-05",
+      "slotId": "BK-05",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-06": {
+      "bikeCode": "BK-06",
+      "slotId": "BK-06",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-07": {
+      "bikeCode": "BK-07",
+      "slotId": "BK-07",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-08": {
+      "bikeCode": "BK-08",
+      "slotId": "BK-08",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-09": {
+      "bikeCode": "BK-09",
+      "slotId": "BK-09",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BK-10": {
+      "bikeCode": "BK-10",
+      "slotId": "BK-10",
+      "stationId": "boeung-kak",
+      "status": "available"
+    },
+    "BL-01": {
+      "bikeCode": "BL-01",
+      "slotId": "BL-01",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-02": {
+      "bikeCode": "BL-02",
+      "slotId": "BL-02",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-03": {
+      "bikeCode": "BL-03",
+      "slotId": "BL-03",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-04": {
+      "bikeCode": "BL-04",
+      "slotId": "BL-04",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-05": {
+      "bikeCode": "BL-05",
+      "slotId": "BL-05",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-06": {
+      "bikeCode": "BL-06",
+      "slotId": "BL-06",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-07": {
+      "bikeCode": "BL-07",
+      "slotId": "BL-07",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-08": {
+      "bikeCode": "BL-08",
+      "slotId": "BL-08",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-09": {
+      "bikeCode": "BL-09",
+      "slotId": "BL-09",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "BL-10": {
+      "bikeCode": "BL-10",
+      "slotId": "BL-10",
+      "stationId": "bassac-lane",
+      "status": "available"
+    },
+    "CC-01": {
+      "bikeCode": "CC-01",
+      "slotId": "CC-01",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-02": {
+      "bikeCode": "CC-02",
+      "slotId": "CC-02",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-03": {
+      "bikeCode": "CC-03",
+      "slotId": "CC-03",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-04": {
+      "bikeCode": "CC-04",
+      "slotId": "CC-04",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-05": {
+      "bikeCode": "CC-05",
+      "slotId": "CC-05",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-06": {
+      "bikeCode": "CC-06",
+      "slotId": "CC-06",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-07": {
+      "bikeCode": "CC-07",
+      "slotId": "CC-07",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-08": {
+      "bikeCode": "CC-08",
+      "slotId": "CC-08",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-09": {
+      "bikeCode": "CC-09",
+      "slotId": "CC-09",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CC-10": {
+      "bikeCode": "CC-10",
+      "slotId": "CC-10",
+      "stationId": "chroy-changvar",
+      "status": "available"
+    },
+    "CM-01": {
+      "bikeCode": "CM-01",
+      "slotId": "CM-01",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-02": {
+      "bikeCode": "CM-02",
+      "slotId": "CM-02",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-03": {
+      "bikeCode": "CM-03",
+      "slotId": "CM-03",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-04": {
+      "bikeCode": "CM-04",
+      "slotId": "CM-04",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-05": {
+      "bikeCode": "CM-05",
+      "slotId": "CM-05",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-06": {
+      "bikeCode": "CM-06",
+      "slotId": "CM-06",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-07": {
+      "bikeCode": "CM-07",
+      "slotId": "CM-07",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-08": {
+      "bikeCode": "CM-08",
+      "slotId": "CM-08",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-09": {
+      "bikeCode": "CM-09",
+      "slotId": "CM-09",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CM-10": {
+      "bikeCode": "CM-10",
+      "slotId": "CM-10",
+      "stationId": "central-market",
+      "status": "available"
+    },
+    "CO-01": {
+      "bikeCode": "CO-01",
+      "slotId": "CO-01",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-02": {
+      "bikeCode": "CO-02",
+      "slotId": "CO-02",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-03": {
+      "bikeCode": "CO-03",
+      "slotId": "CO-03",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-04": {
+      "slotId": "CO-04",
+      "stationId": "capitole-square",
+      "status": "empty"
+    },
+    "CO-05": {
+      "bikeCode": "CO-05",
+      "slotId": "CO-05",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-06": {
+      "bikeCode": "CO-06",
+      "slotId": "CO-06",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-07": {
+      "bikeCode": "CO-07",
+      "slotId": "CO-07",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-08": {
+      "bikeCode": "CO-08",
+      "slotId": "CO-08",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-09": {
+      "bikeCode": "CO-09",
+      "slotId": "CO-09",
+      "stationId": "capitole-square",
+      "status": "available"
+    },
+    "CO-10": {
+      "slotId": "CO-10",
+      "stationId": "capitole-square",
+      "status": "empty"
+    },
+    "DI-01": {
+      "bikeCode": "DI-01",
+      "slotId": "DI-01",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-02": {
+      "bikeCode": "DI-02",
+      "slotId": "DI-02",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-03": {
+      "bikeCode": "DI-03",
+      "slotId": "DI-03",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-04": {
+      "bikeCode": "DI-04",
+      "slotId": "DI-04",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-05": {
+      "bikeCode": "DI-05",
+      "slotId": "DI-05",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-06": {
+      "bikeCode": "DI-06",
+      "slotId": "DI-06",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-07": {
+      "bikeCode": "DI-07",
+      "slotId": "DI-07",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-08": {
+      "bikeCode": "DI-08",
+      "slotId": "DI-08",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-09": {
+      "bikeCode": "DI-09",
+      "slotId": "DI-09",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "DI-10": {
+      "bikeCode": "DI-10",
+      "slotId": "DI-10",
+      "stationId": "diamond-island",
+      "status": "available"
+    },
+    "IM-01": {
+      "bikeCode": "IM-01",
+      "slotId": "IM-01",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-02": {
+      "bikeCode": "IM-02",
+      "slotId": "IM-02",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-03": {
+      "bikeCode": "IM-03",
+      "slotId": "IM-03",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-04": {
+      "bikeCode": "IM-04",
+      "slotId": "IM-04",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-05": {
+      "bikeCode": "IM-05",
+      "slotId": "IM-05",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-06": {
+      "bikeCode": "IM-06",
+      "slotId": "IM-06",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-07": {
+      "bikeCode": "IM-07",
+      "slotId": "IM-07",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-08": {
+      "bikeCode": "IM-08",
+      "slotId": "IM-08",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-09": {
+      "bikeCode": "IM-09",
+      "slotId": "IM-09",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "IM-10": {
+      "bikeCode": "IM-10",
+      "slotId": "IM-10",
+      "stationId": "independence-monument",
+      "status": "available"
+    },
+    "KM-01": {
+      "bikeCode": "KM-01",
+      "slotId": "KM-01",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-02": {
+      "bikeCode": "KM-02",
+      "slotId": "KM-02",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-03": {
+      "bikeCode": "KM-03",
+      "slotId": "KM-03",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-04": {
+      "bikeCode": "KM-04",
+      "slotId": "KM-04",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-05": {
+      "bikeCode": "KM-05",
+      "slotId": "KM-05",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-06": {
+      "bikeCode": "KM-06",
+      "slotId": "KM-06",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-07": {
+      "bikeCode": "KM-07",
+      "slotId": "KM-07",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-08": {
+      "bikeCode": "KM-08",
+      "slotId": "KM-08",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-09": {
+      "bikeCode": "KM-09",
+      "slotId": "KM-09",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "KM-10": {
+      "bikeCode": "KM-10",
+      "slotId": "KM-10",
+      "stationId": "kandal-market",
+      "status": "available"
+    },
+    "NM-01": {
+      "bikeCode": "NM-01",
+      "slotId": "NM-01",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-02": {
+      "bikeCode": "NM-02",
+      "slotId": "NM-02",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-03": {
+      "bikeCode": "NM-03",
+      "slotId": "NM-03",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-04": {
+      "bikeCode": "NM-04",
+      "slotId": "NM-04",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-05": {
+      "bikeCode": "NM-05",
+      "slotId": "NM-05",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-06": {
+      "bikeCode": "NM-06",
+      "slotId": "NM-06",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-07": {
+      "bikeCode": "NM-07",
+      "slotId": "NM-07",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-08": {
+      "bikeCode": "NM-08",
+      "slotId": "NM-08",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-09": {
+      "bikeCode": "NM-09",
+      "slotId": "NM-09",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "NM-10": {
+      "bikeCode": "NM-10",
+      "slotId": "NM-10",
+      "stationId": "phnom-penh-night-market",
+      "status": "available"
+    },
+    "OR-01": {
+      "bikeCode": "OR-01",
+      "slotId": "OR-01",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-02": {
+      "bikeCode": "OR-02",
+      "slotId": "OR-02",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-03": {
+      "bikeCode": "OR-03",
+      "slotId": "OR-03",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-04": {
+      "bikeCode": "OR-04",
+      "slotId": "OR-04",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-05": {
+      "bikeCode": "OR-05",
+      "slotId": "OR-05",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-06": {
+      "bikeCode": "OR-06",
+      "slotId": "OR-06",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-07": {
+      "bikeCode": "OR-07",
+      "slotId": "OR-07",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-08": {
+      "bikeCode": "OR-08",
+      "slotId": "OR-08",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-09": {
+      "bikeCode": "OR-09",
+      "slotId": "OR-09",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OR-10": {
+      "bikeCode": "OR-10",
+      "slotId": "OR-10",
+      "stationId": "orussey-market",
+      "status": "available"
+    },
+    "OS-01": {
+      "bikeCode": "OS-01",
+      "slotId": "OS-01",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-02": {
+      "bikeCode": "OS-02",
+      "slotId": "OS-02",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-03": {
+      "bikeCode": "OS-03",
+      "slotId": "OS-03",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-04": {
+      "bikeCode": "OS-04",
+      "slotId": "OS-04",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-05": {
+      "bikeCode": "OS-05",
+      "slotId": "OS-05",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-06": {
+      "bikeCode": "OS-06",
+      "slotId": "OS-06",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-07": {
+      "bikeCode": "OS-07",
+      "slotId": "OS-07",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-08": {
+      "bikeCode": "OS-08",
+      "slotId": "OS-08",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-09": {
+      "bikeCode": "OS-09",
+      "slotId": "OS-09",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "OS-10": {
+      "bikeCode": "OS-10",
+      "slotId": "OS-10",
+      "stationId": "olympic-stadium",
+      "status": "available"
+    },
+    "PS-01": {
+      "bikeCode": "PS-01",
+      "slotId": "PS-01",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-02": {
+      "bikeCode": "PS-02",
+      "slotId": "PS-02",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-03": {
+      "bikeCode": "PS-03",
+      "slotId": "PS-03",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-04": {
+      "bikeCode": "PS-04",
+      "slotId": "PS-04",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-05": {
+      "bikeCode": "PS-05",
+      "slotId": "PS-05",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-06": {
+      "bikeCode": "PS-06",
+      "slotId": "PS-06",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-07": {
+      "bikeCode": "PS-07",
+      "slotId": "PS-07",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-08": {
+      "bikeCode": "PS-08",
+      "slotId": "PS-08",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-09": {
+      "bikeCode": "PS-09",
+      "slotId": "PS-09",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PS-10": {
+      "bikeCode": "PS-10",
+      "slotId": "PS-10",
+      "stationId": "preah-sihanouk",
+      "status": "available"
+    },
+    "PT-01": {
+      "bikeCode": "PT-01",
+      "slotId": "PT-01",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-02": {
+      "bikeCode": "PT-02",
+      "slotId": "PT-02",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-03": {
+      "bikeCode": "PT-03",
+      "slotId": "PT-03",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-04": {
+      "bikeCode": "PT-04",
+      "slotId": "PT-04",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-05": {
+      "bikeCode": "PT-05",
+      "slotId": "PT-05",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-06": {
+      "bikeCode": "PT-06",
+      "slotId": "PT-06",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-07": {
+      "bikeCode": "PT-07",
+      "slotId": "PT-07",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-08": {
+      "bikeCode": "PT-08",
+      "slotId": "PT-08",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-09": {
+      "bikeCode": "PT-09",
+      "slotId": "PT-09",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "PT-10": {
+      "bikeCode": "PT-10",
+      "slotId": "PT-10",
+      "stationId": "phsar-thmey",
+      "status": "available"
+    },
+    "RM-01": {
+      "bikeCode": "RM-01",
+      "slotId": "RM-01",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-02": {
+      "bikeCode": "RM-02",
+      "slotId": "RM-02",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-03": {
+      "bikeCode": "RM-03",
+      "slotId": "RM-03",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-04": {
+      "bikeCode": "RM-04",
+      "slotId": "RM-04",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-05": {
+      "bikeCode": "RM-05",
+      "slotId": "RM-05",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-06": {
+      "bikeCode": "RM-06",
+      "slotId": "RM-06",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-07": {
+      "bikeCode": "RM-07",
+      "slotId": "RM-07",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-08": {
+      "bikeCode": "RM-08",
+      "slotId": "RM-08",
+      "stationId": "russian-market",
+      "status": "available"
+    },
+    "RM-09": {
+      "slotId": "RM-09",
+      "stationId": "russian-market",
+      "status": "empty"
+    },
+    "RM-10": {
+      "slotId": "RM-10",
+      "stationId": "russian-market",
+      "status": "empty"
+    },
+    "RP-01": {
+      "bikeCode": "RP-01",
+      "slotId": "RP-01",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-02": {
+      "bikeCode": "RP-02",
+      "slotId": "RP-02",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-03": {
+      "bikeCode": "RP-03",
+      "slotId": "RP-03",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-04": {
+      "bikeCode": "RP-04",
+      "slotId": "RP-04",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-05": {
+      "bikeCode": "RP-05",
+      "slotId": "RP-05",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-06": {
+      "bikeCode": "RP-06",
+      "slotId": "RP-06",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-07": {
+      "bikeCode": "RP-07",
+      "slotId": "RP-07",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-08": {
+      "bikeCode": "RP-08",
+      "slotId": "RP-08",
+      "stationId": "royal-palace",
+      "status": "available"
+    },
+    "RP-09": {
+      "slotId": "RP-09",
+      "stationId": "royal-palace",
+      "status": "empty"
+    },
+    "RP-10": {
+      "slotId": "RP-10",
+      "stationId": "royal-palace",
+      "status": "empty"
+    },
+    "TS-01": {
+      "bikeCode": "TS-01",
+      "slotId": "TS-01",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-02": {
+      "bikeCode": "TS-02",
+      "slotId": "TS-02",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-03": {
+      "bikeCode": "TS-03",
+      "slotId": "TS-03",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-04": {
+      "bikeCode": "TS-04",
+      "slotId": "TS-04",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-05": {
+      "bikeCode": "TS-05",
+      "slotId": "TS-05",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-06": {
+      "bikeCode": "TS-06",
+      "slotId": "TS-06",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-07": {
+      "bikeCode": "TS-07",
+      "slotId": "TS-07",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-08": {
+      "bikeCode": "TS-08",
+      "slotId": "TS-08",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-09": {
+      "bikeCode": "TS-09",
+      "slotId": "TS-09",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TS-10": {
+      "bikeCode": "TS-10",
+      "slotId": "TS-10",
+      "stationId": "tonle-sap-riverside",
+      "status": "available"
+    },
+    "TU-01": {
+      "bikeCode": "TU-01",
+      "slotId": "TU-01",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-02": {
+      "bikeCode": "TU-02",
+      "slotId": "TU-02",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-03": {
+      "bikeCode": "TU-03",
+      "slotId": "TU-03",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-04": {
+      "bikeCode": "TU-04",
+      "slotId": "TU-04",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-05": {
+      "bikeCode": "TU-05",
+      "slotId": "TU-05",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-06": {
+      "bikeCode": "TU-06",
+      "slotId": "TU-06",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-07": {
+      "bikeCode": "TU-07",
+      "slotId": "TU-07",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "TU-08": {
+      "bikeCode": "TU-08",
+      "slotId": "TU-08",
+      "stationId": "tuol-sleng",
+      "status": "available"
+    },
+    "WB-01": {
+      "bikeCode": "WB-01",
+      "slotId": "WB-01",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-02": {
+      "bikeCode": "WB-02",
+      "slotId": "WB-02",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-03": {
+      "bikeCode": "WB-03",
+      "slotId": "WB-03",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-04": {
+      "bikeCode": "WB-04",
+      "slotId": "WB-04",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-05": {
+      "bikeCode": "WB-05",
+      "slotId": "WB-05",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-06": {
+      "bikeCode": "WB-06",
+      "slotId": "WB-06",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-07": {
+      "bikeCode": "WB-07",
+      "slotId": "WB-07",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-08": {
+      "bikeCode": "WB-08",
+      "slotId": "WB-08",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-09": {
+      "bikeCode": "WB-09",
+      "slotId": "WB-09",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WB-10": {
+      "bikeCode": "WB-10",
+      "slotId": "WB-10",
+      "stationId": "wat-botum",
+      "status": "available"
+    },
+    "WL-01": {
+      "bikeCode": "WL-01",
+      "slotId": "WL-01",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-02": {
+      "bikeCode": "WL-02",
+      "slotId": "WL-02",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-03": {
+      "bikeCode": "WL-03",
+      "slotId": "WL-03",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-04": {
+      "bikeCode": "WL-04",
+      "slotId": "WL-04",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-05": {
+      "bikeCode": "WL-05",
+      "slotId": "WL-05",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-06": {
+      "bikeCode": "WL-06",
+      "slotId": "WL-06",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-07": {
+      "bikeCode": "WL-07",
+      "slotId": "WL-07",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-08": {
+      "bikeCode": "WL-08",
+      "slotId": "WL-08",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-09": {
+      "bikeCode": "WL-09",
+      "slotId": "WL-09",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WL-10": {
+      "bikeCode": "WL-10",
+      "slotId": "WL-10",
+      "stationId": "wat-langkka",
+      "status": "available"
+    },
+    "WP-01": {
+      "bikeCode": "WP-01",
+      "slotId": "WP-01",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-02": {
+      "bikeCode": "WP-02",
+      "slotId": "WP-02",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-03": {
+      "bikeCode": "WP-03",
+      "slotId": "WP-03",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-04": {
+      "bikeCode": "WP-04",
+      "slotId": "WP-04",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-05": {
+      "bikeCode": "WP-05",
+      "slotId": "WP-05",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-06": {
+      "bikeCode": "WP-06",
+      "slotId": "WP-06",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-07": {
+      "bikeCode": "WP-07",
+      "slotId": "WP-07",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-08": {
+      "bikeCode": "WP-08",
+      "slotId": "WP-08",
+      "stationId": "wat-phnom",
+      "status": "available"
+    },
+    "WP-09": {
+      "slotId": "WP-09",
+      "stationId": "wat-phnom",
+      "status": "empty"
+    },
+    "WP-10": {
+      "slotId": "WP-10",
+      "stationId": "wat-phnom",
+      "status": "empty"
+    }
+  },
+  "rides": {
+    "-OqsMZJX2_VwNHQOod0y": {
+      "bikeCode": "CO-04",
+      "endedAt": "2026-04-23T10:25:16.222",
+      "startedAt": "2026-04-23T10:24:39.008",
+      "stationId": "capitole-square"
+    },
+    "-OqsMi_D1sR7v4rJZfd_": {
+      "bikeCode": "CO-04",
+      "endedAt": "2026-04-23T10:26:09.752",
+      "startedAt": "2026-04-23T10:25:21.040",
+      "stationId": "capitole-square"
+    },
+    "-OqsNnebzTSTtkOVIDC5": {
+      "bikeCode": "CO-04",
+      "startedAt": "2026-04-23T10:30:04.008",
+      "stationId": "capitole-square"
+    }
+  },
+  "stations": {
+    "bassac-lane": {
+      "address": "Street 308, Boeung Keng Kang, Phnom Penh",
+      "availableBikes": 10,
+      "id": "bassac-lane",
+      "latitude": 11.5486,
+      "longitude": 104.9294,
+      "name": "Bassac Lane",
+      "totalCapacity": 16
+    },
+    "boeung-kak": {
+      "address": "Street 93, Phnom Penh",
+      "availableBikes": 10,
+      "id": "boeung-kak",
+      "latitude": 11.5598311,
+      "longitude": 104.892938,
+      "name": "Boeung Kak Lake",
+      "totalCapacity": 20
+    },
+    "capitole-square": {
+      "address": "Monivong Blvd, Doun Penh, Phnom Penh",
+      "availableBikes": 8,
+      "id": "capitole-square",
+      "latitude": 11.5564,
+      "longitude": 104.9282,
+      "name": "Capitole Square",
+      "totalCapacity": 12
+    },
+    "central-market": {
+      "address": "Phnom, Samdach Sang Neayok Srey St. (67), Penh 12209",
+      "availableBikes": 10,
+      "id": "central-market",
+      "latitude": 11.569599,
+      "longitude": 104.920129,
+      "name": "Central Market",
+      "totalCapacity": 10
+    },
+    "chroy-changvar": {
+      "address": "National Road 6A, Phnom Penh",
+      "availableBikes": 10,
+      "id": "chroy-changvar",
+      "latitude": 11.5891463,
+      "longitude": 104.9263887,
+      "name": "Chroy Changvar",
+      "totalCapacity": 16
+    },
+    "diamond-island": {
+      "address": "Koh Pich, Phnom Penh",
+      "availableBikes": 10,
+      "id": "diamond-island",
+      "latitude": 11.5377,
+      "longitude": 104.9453,
+      "name": "Diamond Island",
+      "totalCapacity": 18
+    },
+    "independence-monument": {
+      "address": "Preah Sihanouk Blvd, Chamkar Mon, Phnom Penh",
+      "availableBikes": 10,
+      "id": "independence-monument",
+      "latitude": 11.556374,
+      "longitude": 104.927551,
+      "name": "Independence Monument",
+      "totalCapacity": 10
+    },
+    "kandal-market": {
+      "address": "Street 13, Phnom Penh",
+      "availableBikes": 10,
+      "id": "kandal-market",
+      "latitude": 11.5389305,
+      "longitude": 104.89825,
+      "name": "Kandal Market",
+      "totalCapacity": 16
+    },
+    "olympic-stadium": {
+      "address": "Charles de Gaulle Blvd, Phnom Penh",
+      "availableBikes": 10,
+      "id": "olympic-stadium",
+      "latitude": 11.5626,
+      "longitude": 104.8965,
+      "name": "Olympic Stadium",
+      "totalCapacity": 20
+    },
+    "orussey-market": {
+      "address": "Street 128, Phnom Penh",
+      "availableBikes": 10,
+      "id": "orussey-market",
+      "latitude": 11.5652,
+      "longitude": 104.9118,
+      "name": "Orussey Market",
+      "totalCapacity": 18
+    },
+    "phnom-penh-night-market": {
+      "address": "Preah Sisowath Quay, Phnom Penh",
+      "availableBikes": 10,
+      "id": "phnom-penh-night-market",
+      "latitude": 11.5734,
+      "longitude": 104.9259,
+      "name": "Phnom Penh Night Market",
+      "totalCapacity": 18
+    },
+    "phsar-thmey": {
+      "address": "Monivong Blvd, Phnom Penh",
+      "availableBikes": 10,
+      "id": "phsar-thmey",
+      "latitude": 11.5667,
+      "longitude": 104.9218,
+      "name": "Phsar Thmey",
+      "totalCapacity": 20
+    },
+    "preah-sihanouk": {
+      "address": "Preah Sihanouk Blvd, Phnom Penh",
+      "availableBikes": 10,
+      "id": "preah-sihanouk",
+      "latitude": 11.5532745,
+      "longitude": 104.9156071,
+      "name": "Preah Sihanouk Boulevard",
+      "totalCapacity": 20
+    },
+    "royal-palace": {
+      "address": "Samdach Sothearos Blvd, Phnom Penh",
+      "availableBikes": 8,
+      "id": "royal-palace",
+      "latitude": 11.5629,
+      "longitude": 104.9321,
+      "name": "Royal Palace",
+      "totalCapacity": 12
+    },
+    "russian-market": {
+      "address": "Street 155, Toul Tom Poung, Phnom Penh",
+      "availableBikes": 8,
+      "id": "russian-market",
+      "latitude": 11.5418,
+      "longitude": 104.9172,
+      "name": "Russian Market",
+      "totalCapacity": 12
+    },
+    "tonle-sap-riverside": {
+      "address": "Sisowath Quay, Phnom Penh",
+      "availableBikes": 10,
+      "id": "tonle-sap-riverside",
+      "latitude": 11.5650097,
+      "longitude": 104.9312897,
+      "name": "Tonle Sap Riverside",
+      "totalCapacity": 20
+    },
+    "tuol-sleng": {
+      "address": "Street 113, Phnom Penh",
+      "availableBikes": 10,
+      "id": "tuol-sleng",
+      "latitude": 11.5495,
+      "longitude": 104.9161,
+      "name": "Tuol Sleng",
+      "totalCapacity": 18
+    },
+    "wat-botum": {
+      "address": "Samdach Sothearos Blvd, Phnom Penh",
+      "availableBikes": 10,
+      "id": "wat-botum",
+      "latitude": 11.5517,
+      "longitude": 104.9387,
+      "name": "Wat Botum Park",
+      "totalCapacity": 22
+    },
+    "wat-langkka": {
+      "address": "Street 282, Phnom Penh",
+      "availableBikes": 10,
+      "id": "wat-langkka",
+      "latitude": 11.5539,
+      "longitude": 104.9251,
+      "name": "Wat Langka",
+      "totalCapacity": 18
+    },
+    "wat-phnom": {
+      "address": "Street 94, Daun Penh, Phnom Penh",
+      "availableBikes": 8,
+      "id": "wat-phnom",
+      "latitude": 11.559729,
+      "longitude": 104.910392,
+      "name": "Wat Phnom",
+      "totalCapacity": 12
+    }
+  }
+}

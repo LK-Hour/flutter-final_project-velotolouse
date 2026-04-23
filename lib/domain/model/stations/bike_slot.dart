@@ -1,5 +1,5 @@
 /// Status values a bike slot can hold.
-enum BikeSlotStatus { available, empty }
+enum BikeSlotStatus { available, unavailable }
 
 /// Represents a single docking slot at a station.
 class BikeSlot {
@@ -15,10 +15,10 @@ class BikeSlot {
   /// Unique slot identifier, e.g. "CO-01".
   final String id;
 
-  /// Whether the slot holds a bike or is empty.
+  /// Whether the slot holds a bike or is unavailable.
   final BikeSlotStatus status;
 
-  /// The code of the bike currently docked, or null when empty.
+  /// The code of the bike currently docked, or null when unavailable.
   final String? bikeCode;
 
   bool get isAvailable => status == BikeSlotStatus.available;

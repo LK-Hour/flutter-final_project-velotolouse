@@ -122,7 +122,9 @@ class _StationSearchSheetState extends State<StationSearchSheet> {
                             widget.isReturnMode
                                 ? Icons.keyboard_return_rounded
                                 : Icons.directions_bike_rounded,
-                            color: canSelect ? AppColors.slate : AppColors.warning,
+                            color: canSelect
+                                ? AppColors.slate
+                                : AppColors.warning,
                           ),
                           title: Text(
                             station.name,

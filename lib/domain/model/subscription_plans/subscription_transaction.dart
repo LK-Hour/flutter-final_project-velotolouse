@@ -7,6 +7,7 @@ class SubscriptionTransaction {
     required this.bankShortName,
     required this.amountUsd,
     required this.createdAt,
+    this.status = 'active',
   });
 
   final String id;
@@ -16,4 +17,5 @@ class SubscriptionTransaction {
   final String bankShortName;
   final double amountUsd;
   final DateTime? createdAt;
+  final String status;
 }

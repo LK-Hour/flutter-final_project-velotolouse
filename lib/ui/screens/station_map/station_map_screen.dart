@@ -1,15 +1,19 @@
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
-import 'package:final_project_velotolouse/screens/stations_screen.dart';
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
-import 'package:final_project_velotolouse/ui/screens/subscription_plans/instant_payment_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner_transition.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/station_bike_inventory_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +25,9 @@ class StationMapScreen extends StatelessWidget {
   static const Map<String, Offset> _markerMapPosition = <String, Offset>{
     'wat-phnom': Offset(0.34, 0.24),
     'central-market': Offset(0.24, 0.55),
+    'capitole-square': Offset(0.47, 0.39),
     'independence-monument': Offset(0.64, 0.52),
+    'russian-market': Offset(0.74, 0.68),
   };
 
   Future<void> _onSearchTapped(
@@ -68,6 +74,52 @@ class StationMapScreen extends StatelessWidget {
         content: Text('Return mode switches automatically after bike booking.'),
       ),
     );
+  }
+
+  void _onScanButtonPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const QrScannerScreen(showDemoScanButton: true),
+      ),
+    );
+  }
+
+  Future<void> _onEndRidePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) async {
+    final String? sessionId = viewModel.activeRideSessionId;
+    final DateTime? startedAt = viewModel.activeRideStartedAt;
+    if (sessionId == null || startedAt == null) {
+      return;
+    }
+
+    try {
+      final rideRepo = context.read<RideRepository>();
+      final bikeRepo = context.read<BikeRepository>();
+      final activeRide = await rideRepo.getActiveRide();
+      if (activeRide != null) {
+        await Future.wait([
+          rideRepo.endRide(sessionId),
+          bikeRepo.lockBike(activeRide.bikeCode),
+        ]);
+      }
+
+      if (!context.mounted) return;
+
+      viewModel.endActiveRide();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ride ended successfully.')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to end ride. Please try again.')),
+      );
+    }
   }
 
   void _onReturnModeBannerClose(StationMapViewModel viewModel) {
@@ -131,17 +183,60 @@ class StationMapScreen extends StatelessWidget {
     BuildContext context,
     StationMapViewModel viewModel,
     Station station,
-  ) {
-    final ReturnBikeResult result = viewModel.returnBikeToStation(station);
-    final String message = switch (result) {
-      ReturnBikeResult.success => 'Bike returned successfully.',
-      ReturnBikeResult.noActiveRide => 'No active ride to return.',
-      ReturnBikeResult.stationFull =>
-        'This station is full. Please choose another dock.',
-    };
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  ) async {
+    final String? sessionId = viewModel.activeRideSessionId;
+    final String? bikeCode = viewModel.activeRideBikeCode;
+    if (sessionId == null || bikeCode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active ride to return.')),
+      );
+      return;
+    }
+
+    final bool isStationFull = viewModel.isReturnMode
+        ? viewModel.showFullStationRerouteAlert
+        : station.freeDocks <= 0;
+    if (isStationFull) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This station is full. Please choose another dock.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final rideRepo = context.read<RideRepository>();
+      final bikeRepo = context.read<BikeRepository>();
+      final activeRide = await rideRepo.getActiveRide();
+      if (activeRide == null) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No active ride to return.')),
+        );
+        return;
+      }
+
+      await Future.wait([
+        rideRepo.endRide(sessionId),
+        bikeRepo.lockBike(bikeCode),
+      ]);
+
+      if (!context.mounted) return;
+
+      viewModel.endActiveRide();
+      await viewModel.loadStations();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bike returned successfully.')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to return bike. Please try again.'),
+        ),
+      );
+    }
   }
 
   void _onRerouteToDockPressed(
@@ -172,27 +267,28 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
-  void _onInstantPaymentPressed(BuildContext context) {
+  void _onViewBikesPressed(BuildContext context, Station station) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const InstantPaymentScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => StationBikeInventoryScreen(station: station),
+      ),
     );
   }
 
-  void _onViewStationPressed(BuildContext context, Station station) {
-    final viewModel = context.read<StationMapViewModel>();
-    Navigator.push(
+  void _onProfilePressed(BuildContext context) {
+    Navigator.of(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            StationsScreen(station: station, allStations: viewModel.stations),
-      ),
-    );
+    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     final StationMapViewModel viewModel = context.watch<StationMapViewModel>();
     final Station? selectedStation = viewModel.selectedStation;
+    final double bottomPanelHeight = viewModel.activeRideStartedAt == null
+        ? 138
+        : 176;
+    final double popupBottomOffset = bottomPanelHeight + 12;
 
     return Scaffold(
       backgroundColor: AppColors.baseSurfaceAlt,
@@ -245,16 +341,16 @@ class StationMapScreen extends StatelessWidget {
                           onMapTap: viewModel.clearSelectedStation,
                         ),
                       ),
-                    if (viewModel.showReturnModeBanner)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: ReturnModeBanner(
-                          onClose: () => _onReturnModeBannerClose(viewModel),
-                        ),
-                      )
-                    else
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: ReturnModeBannerTransition(
+                        visible: viewModel.showReturnModeBanner,
+                        onClose: () => _onReturnModeBannerClose(viewModel),
+                      ),
+                    ),
+                    if (!viewModel.showReturnModeBanner)
                       Positioned(
                         left: 16,
                         right: 16,
@@ -292,7 +388,7 @@ class StationMapScreen extends StatelessWidget {
                       Positioned(
                         left: 16,
                         right: 16,
-                        bottom: 122,
+                        bottom: popupBottomOffset,
                         child: viewModel.showFullStationRerouteAlert
                             ? StationRerouteAlert(
                                 selectedStation: selectedStation,
@@ -322,7 +418,6 @@ class StationMapScreen extends StatelessWidget {
                             : StationInfoPopup(
                                 station: selectedStation,
                                 isReturnMode: viewModel.isReturnMode,
-                                onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
                                   context,
                                   viewModel,
@@ -333,9 +428,7 @@ class StationMapScreen extends StatelessWidget {
                                   viewModel,
                                   selectedStation,
                                 ),
-                                onInstantPayment: () =>
-                                    _onInstantPaymentPressed(context),
-                                onViewStation: () => _onViewStationPressed(
+                                onViewBikes: () => _onViewBikesPressed(
                                   context,
                                   selectedStation,
                                 ),
@@ -343,6 +436,27 @@ class StationMapScreen extends StatelessWidget {
                       ),
                   ],
                 ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: BottomRidePanel(
+                selectedStationName: selectedStation?.name,
+                isReturnMode: viewModel.isReturnMode,
+                activeRideBikeCode: viewModel.activeRideBikeCode,
+                activeRideStationName: viewModel.activeRideStationName,
+                activeRideStartedAt: viewModel.activeRideStartedAt,
+                onScanTap: viewModel.hasActiveRide
+                    ? null
+                    : () => _onScanButtonPressed(context, viewModel),
+                onProfileTap: viewModel.hasActiveRide
+                    ? null
+                    : () => _onProfilePressed(context),
+                onEndRide: viewModel.hasActiveRide
+                    ? () => _onEndRidePressed(context, viewModel)
+                    : null,
               ),
             ),
           ],

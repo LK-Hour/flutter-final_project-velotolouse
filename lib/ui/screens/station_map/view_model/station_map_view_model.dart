@@ -1,11 +1,14 @@
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
+import 'package:final_project_velotolouse/domain/model/stations/station_bike_inventory_item.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/domain/repositories/bikes/station_bike_inventory_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/navigation/navigation_launcher_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/routes/station_route_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 
 enum ReturnBikeResult { success, noActiveRide, stationFull }
 
@@ -21,10 +24,14 @@ enum StationNavigationResult {
 class StationMapViewModel extends ChangeNotifier {
   StationMapViewModel({
     required StationRepository repository,
+    StationBikeInventoryRepository? stationBikeInventoryRepository,
     UserLocationRepository? userLocationRepository,
     NavigationLauncherRepository? navigationLauncherRepository,
     StationRouteRepository? stationRouteRepository,
   }) : _repository = repository,
+       _stationBikeInventoryRepository =
+           stationBikeInventoryRepository ??
+           const _UnavailableStationBikeInventoryRepository(),
        _userLocationRepository =
            userLocationRepository ?? const _UnavailableUserLocationRepository(),
        _navigationLauncherRepository =
@@ -34,6 +41,7 @@ class StationMapViewModel extends ChangeNotifier {
            stationRouteRepository ?? const _EmptyStationRouteRepository();
 
   final StationRepository _repository;
+  final StationBikeInventoryRepository _stationBikeInventoryRepository;
   final UserLocationRepository _userLocationRepository;
   final NavigationLauncherRepository _navigationLauncherRepository;
   final StationRouteRepository _stationRouteRepository;
@@ -48,6 +56,11 @@ class StationMapViewModel extends ChangeNotifier {
   Station? _selectedStation;
   bool _hasActiveRide = false;
   bool _isReturnBannerVisible = true;
+  String? _activeRideSessionId;
+  DateTime? _activeRideStartedAt;
+  String? _activeRideBikeCode;
+  String? _activeRideStationName;
+  Timer? _returnBannerAutoHideTimer;
   GeoCoordinate _mapCenter = defaultMapCenter;
   GeoCoordinate? _currentUserLocation;
   List<GeoCoordinate> _activeRoutePath = <GeoCoordinate>[];
@@ -60,6 +73,10 @@ class StationMapViewModel extends ChangeNotifier {
   bool get hasActiveRide => _hasActiveRide;
   bool get isReturnMode => _hasActiveRide;
   bool get showReturnModeBanner => isReturnMode && _isReturnBannerVisible;
+  String? get activeRideSessionId => _activeRideSessionId;
+  DateTime? get activeRideStartedAt => _activeRideStartedAt;
+  String? get activeRideBikeCode => _activeRideBikeCode;
+  String? get activeRideStationName => _activeRideStationName;
   GeoCoordinate get mapCenter => _mapCenter;
   GeoCoordinate? get currentUserLocation => _currentUserLocation;
   List<GeoCoordinate> get activeRoutePath =>
@@ -68,13 +85,13 @@ class StationMapViewModel extends ChangeNotifier {
   bool get showFullStationRerouteAlert {
     return isReturnMode &&
         _selectedStation != null &&
-        _selectedStation!.freeDocks == 0;
+        liveFreeDocksForStation(_selectedStation!) == 0;
   }
 
   bool get showEmptyStationRerouteAlert {
     return !isReturnMode &&
         _selectedStation != null &&
-        _selectedStation!.availableBikes == 0;
+        liveAvailableBikesForStation(_selectedStation!) == 0;
   }
 
   Station? get suggestedAlternativeDockStation {
@@ -84,7 +101,7 @@ class StationMapViewModel extends ChangeNotifier {
 
     return _findNearestStation(
       selected: _selectedStation!,
-      isCandidate: (Station station) => station.freeDocks > 0,
+      isCandidate: (Station station) => liveFreeDocksForStation(station) > 0,
     );
   }
 
@@ -95,7 +112,8 @@ class StationMapViewModel extends ChangeNotifier {
 
     return _findNearestStation(
       selected: _selectedStation!,
-      isCandidate: (Station station) => station.availableBikes > 0,
+      isCandidate: (Station station) =>
+          liveAvailableBikesForStation(station) > 0,
     );
   }
 
@@ -105,7 +123,8 @@ class StationMapViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _stations = await _repository.fetchStations();
+      final List<Station> loadedStations = await _repository.fetchStations();
+      _stations = await _hydrateStationsWithLiveAvailability(loadedStations);
       if (_selectedStation != null) {
         _selectedStation = _findStationById(_selectedStation!.id);
       }
@@ -143,6 +162,20 @@ class StationMapViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void activateRide({
+    required String sessionId,
+    required DateTime startedAt,
+    required String bikeCode,
+    required String stationName,
+  }) {
+    _activeRideSessionId = sessionId;
+    _activeRideStartedAt = startedAt;
+    _activeRideBikeCode = bikeCode;
+    _activeRideStationName = stationName;
+    _applyRideState(isActive: true);
+    notifyListeners();
+  }
+
   bool activateRideFromScan() {
     if (_hasActiveRide) {
       return false;
@@ -157,6 +190,10 @@ class StationMapViewModel extends ChangeNotifier {
       return false;
     }
     _applyRideState(isActive: false);
+    _activeRideSessionId = null;
+    _activeRideStartedAt = null;
+    _activeRideBikeCode = null;
+    _activeRideStationName = null;
     notifyListeners();
     return true;
   }
@@ -184,6 +221,10 @@ class StationMapViewModel extends ChangeNotifier {
           .toList(growable: false);
     }
     _applyRideState(isActive: false);
+    _activeRideSessionId = null;
+    _activeRideStartedAt = null;
+    _activeRideBikeCode = null;
+    _activeRideStationName = null;
     notifyListeners();
     return ReturnBikeResult.success;
   }
@@ -193,6 +234,7 @@ class StationMapViewModel extends ChangeNotifier {
       return false;
     }
     _isReturnBannerVisible = false;
+    _returnBannerAutoHideTimer?.cancel();
     notifyListeners();
     return true;
   }
@@ -312,13 +354,15 @@ class StationMapViewModel extends ChangeNotifier {
   }
 
   bool hasAvailabilityForCurrentMode(Station station) {
-    return isReturnMode ? station.freeDocks > 0 : station.availableBikes > 0;
+    return isReturnMode
+        ? liveFreeDocksForStation(station) > 0
+        : liveAvailableBikesForStation(station) > 0;
   }
 
   String availabilityLabelForCurrentMode(Station station) {
     return isReturnMode
-        ? '${station.freeDocks} Docks'
-        : '${station.availableBikes} Bikes';
+        ? '${liveFreeDocksForStation(station)} Docks'
+        : '${liveAvailableBikesForStation(station)} Bikes';
   }
 
   List<Station> searchStations(String query) {
@@ -378,6 +422,47 @@ class StationMapViewModel extends ChangeNotifier {
     return nearestStation;
   }
 
+  int liveAvailableBikesForStation(Station station) {
+    for (final Station currentStation in _stations) {
+      if (currentStation.id == station.id) {
+        return currentStation.availableBikes;
+      }
+    }
+    return station.availableBikes;
+  }
+
+  int liveFreeDocksForStation(Station station) {
+    return station.totalCapacity - liveAvailableBikesForStation(station);
+  }
+
+  Future<List<Station>> _hydrateStationsWithLiveAvailability(
+    List<Station> stations,
+  ) async {
+    if (_stationBikeInventoryRepository
+        is _UnavailableStationBikeInventoryRepository) {
+      return stations;
+    }
+
+    if (stations.isEmpty) {
+      return stations;
+    }
+
+    final List<Future<Station>> hydratedStations = stations
+        .map((Station station) async {
+          final List<StationBikeInventoryItem> inventory =
+              await _stationBikeInventoryRepository.fetchBikesForStation(
+                station.id,
+              );
+          final int liveAvailableCount = inventory
+              .where((StationBikeInventoryItem item) => item.isAvailable)
+              .length;
+          return station.copyWith(availableBikes: liveAvailableCount);
+        })
+        .toList(growable: false);
+
+    return Future.wait(hydratedStations);
+  }
+
   double _distanceSquared(Station a, Station b) {
     final double latDiff = a.latitude - b.latitude;
     final double lngDiff = a.longitude - b.longitude;
@@ -389,6 +474,31 @@ class StationMapViewModel extends ChangeNotifier {
     _selectedStation = null;
     _isReturnBannerVisible = isActive;
     _activeRoutePath = <GeoCoordinate>[];
+
+    if (isActive) {
+      _scheduleReturnModeBannerAutoHide();
+    } else {
+      _activeRideSessionId = null;
+      _activeRideStartedAt = null;
+      _activeRideBikeCode = null;
+      _activeRideStationName = null;
+      _returnBannerAutoHideTimer?.cancel();
+      _returnBannerAutoHideTimer = null;
+    }
+  }
+
+  void _scheduleReturnModeBannerAutoHide() {
+    _returnBannerAutoHideTimer?.cancel();
+    _returnBannerAutoHideTimer = Timer(const Duration(seconds: 3), () {
+      _isReturnBannerVisible = false;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _returnBannerAutoHideTimer?.cancel();
+    super.dispose();
   }
 
   StationNavigationResult _navigationResultFromLocationStatus(
@@ -427,6 +537,18 @@ class _UnavailableNavigationLauncherRepository
     required GeoCoordinate destination,
   }) async {
     return false;
+  }
+}
+
+class _UnavailableStationBikeInventoryRepository
+    implements StationBikeInventoryRepository {
+  const _UnavailableStationBikeInventoryRepository();
+
+  @override
+  Future<List<StationBikeInventoryItem>> fetchBikesForStation(
+    String stationId,
+  ) async {
+    return const <StationBikeInventoryItem>[];
   }
 }
 
