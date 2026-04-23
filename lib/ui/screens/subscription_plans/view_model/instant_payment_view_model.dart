@@ -6,23 +6,26 @@ import '../../../../domain/repositories/subscription_plans/instant_payment_repos
 
 class InstantPaymentViewModel extends ChangeNotifier {
   InstantPaymentViewModel({required InstantPaymentRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final InstantPaymentRepository _repository;
 
-  RidePaymentSummary? _summary;
+  RidePaymentSummary? _baseSummary;
   List<BankOption> _banks = const [];
   int _selectedBankIndex = 0;
   bool _isLoading = false;
   bool _isPaying = false;
   String? _errorMessage;
+  double? _customAmountUsd;
 
-  RidePaymentSummary? get summary => _summary;
+  RidePaymentSummary? get summary => _buildEffectiveSummary();
+  RidePaymentSummary? get baseSummary => _baseSummary;
   List<BankOption> get banks => _banks;
   int get selectedBankIndex => _selectedBankIndex;
   bool get isLoading => _isLoading;
   bool get isPaying => _isPaying;
   String? get errorMessage => _errorMessage;
+  double? get customAmountUsd => _customAmountUsd;
 
   BankOption? get selectedBank {
     if (_banks.isEmpty || _selectedBankIndex >= _banks.length) {
@@ -38,15 +41,25 @@ class InstantPaymentViewModel extends ChangeNotifier {
 
     try {
       final data = await _repository.fetchInstantPaymentData();
-      _summary = data.summary;
+      _baseSummary = data.summary;
       _banks = data.banks;
       _selectedBankIndex = 0;
+      _customAmountUsd = data.summary.rideCostUsd;
     } catch (_) {
       _errorMessage = 'Failed to load payment options.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void setCustomAmountUsd(double amountUsd) {
+    if (_baseSummary == null || amountUsd <= 0) {
+      return;
+    }
+
+    _customAmountUsd = amountUsd;
+    notifyListeners();
   }
 
   void selectBank(int index) {
@@ -59,7 +72,9 @@ class InstantPaymentViewModel extends ChangeNotifier {
   }
 
   Future<bool> payNow() async {
-    if (_isPaying || selectedBank == null || _summary == null) {
+    final paymentSummary = _buildEffectiveSummary();
+
+    if (_isPaying || selectedBank == null || paymentSummary == null) {
       return false;
     }
 
@@ -68,7 +83,7 @@ class InstantPaymentViewModel extends ChangeNotifier {
 
     try {
       await _repository.createInstantPaymentTransaction(
-        summary: _summary!,
+        summary: paymentSummary,
         bank: selectedBank!,
       );
       _errorMessage = null;
@@ -82,5 +97,24 @@ class InstantPaymentViewModel extends ChangeNotifier {
     _isPaying = false;
     notifyListeners();
     return true;
+  }
+
+  RidePaymentSummary? _buildEffectiveSummary() {
+    final summary = _baseSummary;
+    if (summary == null) {
+      return null;
+    }
+
+    final amountUsd = _customAmountUsd ?? summary.rideCostUsd;
+    final rate = summary.rideCostUsd == 0
+        ? 0
+        : summary.rideCostKhr / summary.rideCostUsd;
+
+    return RidePaymentSummary(
+      rideCostUsd: amountUsd,
+      rideCostKhr: (amountUsd * rate).round(),
+      duration: summary.duration,
+      distanceKm: summary.distanceKm,
+    );
   }
 }

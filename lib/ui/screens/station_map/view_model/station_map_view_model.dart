@@ -438,7 +438,8 @@ class StationMapViewModel extends ChangeNotifier {
   Future<List<Station>> _hydrateStationsWithLiveAvailability(
     List<Station> stations,
   ) async {
-    if (_stationBikeInventoryRepository is _UnavailableStationBikeInventoryRepository) {
+    if (_stationBikeInventoryRepository
+        is _UnavailableStationBikeInventoryRepository) {
       return stations;
     }
 

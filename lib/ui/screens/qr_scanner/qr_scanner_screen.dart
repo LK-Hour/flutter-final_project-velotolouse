@@ -3,18 +3,29 @@ import 'package:final_project_velotolouse/domain/repositories/rides/ride_reposit
 import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/bike_connecting/bike_connecting_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/ui/screens/subscription_plans/instant_payment_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/subscription_plans/passes/daily_pass_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+
 import 'web_camera_stub.dart' if (dart.library.html) 'web_camera_impl.dart';
 
-/// QR Scanner Screen with working scan detection and unlock success flow
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key, this.showDemoScanButton = false});
+  const QrScannerScreen({
+    super.key,
+    this.showDemoScanButton = false,
+    this.bikeCode,
+    this.stationId,
+    this.stationName,
+  });
 
   final bool showDemoScanButton;
+  final String? bikeCode;
+  final String? stationId;
+  final String? stationName;
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -23,10 +34,11 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen>
     with SingleTickerProviderStateMixin {
   final MobileScannerController _scannerController = MobileScannerController(
-    facing: CameraFacing.front,
+    facing: CameraFacing.back,
   );
-  late AnimationController _animationController;
-  late Animation<double> _animation;
+
+  late final AnimationController _animationController;
+  late final Animation<double> _animation;
   bool _isFlashOn = false;
   bool _hasScanned = false;
 
@@ -40,7 +52,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     _animation = Tween<double>(begin: 0.05, end: 0.9).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    // On web, start the HTML5 camera feed with QR detection
+
     if (kIsWeb) {
       initWebCamera(onQrDetected: _handleCodeFound);
     }
@@ -59,9 +71,12 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
   void _onQrDetected(BarcodeCapture capture) {
     if (_hasScanned) return;
-    final barcode = capture.barcodes.firstOrNull;
-    if (barcode?.rawValue != null) {
-      _handleCodeFound(barcode!.rawValue!);
+    if (capture.barcodes.isEmpty) return;
+
+    final barcode = capture.barcodes.first;
+    final rawValue = barcode.rawValue;
+    if (rawValue != null && rawValue.isNotEmpty) {
+      _handleCodeFound(rawValue);
     }
   }
 
@@ -70,7 +85,10 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     setState(() => _hasScanned = true);
     _animationController.stop();
 
-    // If a ride is already active, redirect to it instead of creating another.
+    final String effectiveCode = widget.bikeCode ?? code;
+    final String effectiveStationId = widget.stationId ?? 'capitole-square';
+    final String effectiveStationName = widget.stationName ?? 'Capitole Square';
+
     final rideRepo = context.read<RideRepository>();
     final bikeRepo = context.read<BikeRepository>();
     final activeRide = await rideRepo.getActiveRide();
@@ -81,12 +99,12 @@ class _QrScannerScreenState extends State<QrScannerScreen>
       final activeSession =
           activeRide ??
           await rideRepo.startRide(
-            bikeCode: code,
-            stationId: 'capitole-square',
+            bikeCode: effectiveCode,
+            stationId: effectiveStationId,
           );
 
       if (activeRide == null) {
-        await bikeRepo.unlockBike(code);
+        await bikeRepo.unlockBike(effectiveCode);
       }
 
       try {
@@ -94,7 +112,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
           sessionId: activeSession.id,
           startedAt: activeSession.startedAt,
           bikeCode: activeSession.bikeCode,
-          stationName: 'Capitole Square',
+          stationName: effectiveStationName,
         );
       } catch (_) {
         // Screen may be used outside station map flow.
@@ -104,7 +122,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
         MaterialPageRoute<void>(
           builder: (_) => ActiveRideScreen(
             bikeCode: activeSession.bikeCode,
-            stationName: 'Capitole Square',
+            stationName: effectiveStationName,
             sessionId: activeSession.id,
           ),
         ),
@@ -118,11 +136,12 @@ class _QrScannerScreenState extends State<QrScannerScreen>
           sessionId: activeRide.id,
           startedAt: activeRide.startedAt,
           bikeCode: activeRide.bikeCode,
-          stationName: 'Capitole Square',
+          stationName: effectiveStationName,
         );
       } catch (_) {
         // Screen may be used outside station map flow.
       }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('You already have an active ride. Resuming it now.'),
@@ -132,7 +151,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
         MaterialPageRoute<void>(
           builder: (_) => ActiveRideScreen(
             bikeCode: activeRide.bikeCode,
-            stationName: 'Capitole Square',
+            stationName: effectiveStationName,
             sessionId: activeRide.id,
           ),
         ),
@@ -140,13 +159,10 @@ class _QrScannerScreenState extends State<QrScannerScreen>
       return;
     }
 
-    // Validate bike exists in the repository before proceeding.
-    final slot = await bikeRepo.getBikeByCode(code);
-
+    final slot = await bikeRepo.getBikeByCode(effectiveCode);
     if (!mounted) return;
 
     if (slot == null) {
-      // Unknown code — reset so the user can try again.
       setState(() => _hasScanned = false);
       _animationController.repeat(reverse: true);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,8 +183,8 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => BikeConnectingScreen(
-          bikeCode: code,
-          stationName: 'Capitole Square',
+          bikeCode: effectiveCode,
+          stationName: effectiveStationName,
           connectionDelay: widget.showDemoScanButton
               ? Duration.zero
               : const Duration(seconds: 2),
@@ -224,6 +240,109 @@ class _QrScannerScreenState extends State<QrScannerScreen>
           ),
         ],
       ),
+    );
+  }
+
+  void _showDemoPaymentOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Insufficient balance',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Choose how to continue the demo before scanning the bike again.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF8E8E8E)),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => InstantPaymentScreen(
+                            bikeCode: widget.bikeCode ?? 'CO-04',
+                            stationName:
+                                widget.stationName ?? 'Capitole Square',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.flash_on_rounded),
+                    label: const Text('Demo Instant Topup'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.warning,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DailyPassScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.card_membership_outlined),
+                    label: const Text('View Subscription Plans'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.warning,
+                      side: const BorderSide(
+                        color: AppColors.warning,
+                        width: 1.6,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -288,7 +407,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
       ),
       body: Stack(
         children: [
-          // Full-screen camera feed (behind everything)
           Positioned.fill(
             child: kIsWeb
                 ? const WebCameraView()
@@ -299,11 +417,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                     onDetect: _onQrDetected,
                   ),
           ),
-
-          // Dark overlay with transparent cutout
           CustomPaint(painter: _QrScannerOverlayPainter(), child: Container()),
-
-          // Orange corner borders and scanning line
           Center(
             child: Container(
               margin: const EdgeInsets.only(bottom: 120),
@@ -311,31 +425,26 @@ class _QrScannerScreenState extends State<QrScannerScreen>
               height: 340,
               child: Stack(
                 children: [
-                  // Top-left corner
-                  Positioned(
+                  const Positioned(
                     top: 0,
                     left: 0,
                     child: _CornerBorder(isTopLeft: true),
                   ),
-                  // Top-right corner
-                  Positioned(
+                  const Positioned(
                     top: 0,
                     right: 0,
                     child: _CornerBorder(isTopRight: true),
                   ),
-                  // Bottom-left corner
-                  Positioned(
+                  const Positioned(
                     bottom: 0,
                     left: 0,
                     child: _CornerBorder(isBottomLeft: true),
                   ),
-                  // Bottom-right corner
-                  Positioned(
+                  const Positioned(
                     bottom: 0,
                     right: 0,
                     child: _CornerBorder(isBottomRight: true),
                   ),
-                  // Animated scanning line (only while searching)
                   if (!_hasScanned)
                     AnimatedBuilder(
                       animation: _animation,
@@ -364,8 +473,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
               ),
             ),
           ),
-
-          // Bottom scanning info sheet
           Positioned(
             bottom: 0,
             left: 0,
@@ -384,7 +491,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Drag handle
                     Center(
                       child: Container(
                         width: 36,
@@ -396,8 +502,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                         ),
                       ),
                     ),
-
-                    // Station name + searching status on one compact row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -413,9 +517,9 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Capitole Square',
-                              style: TextStyle(
+                            Text(
+                              widget.stationName ?? 'Capitole Square',
+                              style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -448,37 +552,59 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                       ],
                     ),
                     const SizedBox(height: 14),
-
-                    // Action button(s)
                     Center(
                       child: (kIsWeb || widget.showDemoScanButton)
                           ? Column(
                               children: [
                                 SizedBox(
                                   width: double.infinity,
-                                  child: GestureDetector(
-                                    onTap: () => _handleCodeFound('CO-04'),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.warning,
+                                  height: 50,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _handleCodeFound(
+                                      widget.bikeCode ?? 'CO-04',
+                                    ),
+                                    icon: const Icon(
+                                      Icons.flash_on_rounded,
+                                      size: 18,
+                                    ),
+                                    label: const Text(
+                                      'Simulate QR Scan (Book)',
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.warning,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Center(
-                                        child: Text(
-                                          '⚡  Simulate QR Scan (Demo)',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _showDemoPaymentOptions,
+                                    icon: const Icon(
+                                      Icons.account_balance_wallet_outlined,
+                                      size: 18,
+                                    ),
+                                    label: const Text(
+                                      'Simulate Instant Topup / Subscription',
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.warning,
+                                      side: const BorderSide(
+                                        color: AppColors.warning,
+                                        width: 1.6,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
                                 TextButton(
                                   onPressed: _showManualEntryDialog,
                                   child: Text(
@@ -520,6 +646,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                               ),
                             ),
                     ),
+                    const SizedBox(height: 14),
                   ],
                 ),
               ),
@@ -531,40 +658,18 @@ class _QrScannerScreenState extends State<QrScannerScreen>
   }
 }
 
-/// Custom painter for dark overlay with transparent square cutout
 class _QrScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black.withOpacity(0.6)
-      ..style = PaintingStyle.fill;
-
-    final cutoutSize = 340.0;
-    final cutoutRect = Rect.fromCenter(
-      center: Offset(size.width / 2, (size.height / 2) - 60),
-      width: cutoutSize,
-      height: cutoutSize,
-    );
-
-    final path = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRRect(RRect.fromRectAndRadius(cutoutRect, const Radius.circular(16)))
-      ..fillType = PathFillType.evenOdd;
-
-    canvas.drawPath(path, paint);
+    final dimPaint = Paint()..color = Colors.black.withOpacity(0.7);
+    canvas.drawRect(Offset.zero & size, dimPaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Orange corner border widget
 class _CornerBorder extends StatelessWidget {
-  final bool isTopLeft;
-  final bool isTopRight;
-  final bool isBottomLeft;
-  final bool isBottomRight;
-
   const _CornerBorder({
     this.isTopLeft = false,
     this.isTopRight = false,
@@ -572,27 +677,108 @@ class _CornerBorder extends StatelessWidget {
     this.isBottomRight = false,
   });
 
+  final bool isTopLeft;
+  final bool isTopRight;
+  final bool isBottomLeft;
+  final bool isBottomRight;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        border: Border(
-          top: (isTopLeft || isTopRight)
-              ? const BorderSide(color: AppColors.warning, width: 4)
-              : BorderSide.none,
-          left: (isTopLeft || isBottomLeft)
-              ? const BorderSide(color: AppColors.warning, width: 4)
-              : BorderSide.none,
-          right: (isTopRight || isBottomRight)
-              ? const BorderSide(color: AppColors.warning, width: 4)
-              : BorderSide.none,
-          bottom: (isBottomLeft || isBottomRight)
-              ? const BorderSide(color: AppColors.warning, width: 4)
-              : BorderSide.none,
+    final borderColor = AppColors.warning;
+    const cornerSize = 34.0;
+    const strokeWidth = 4.0;
+
+    final topLeft = isTopLeft;
+    final topRight = isTopRight;
+    final bottomLeft = isBottomLeft;
+    final bottomRight = isBottomRight;
+
+    return SizedBox(
+      width: cornerSize,
+      height: cornerSize,
+      child: CustomPaint(
+        painter: _CornerPainter(
+          color: borderColor,
+          strokeWidth: strokeWidth,
+          topLeft: topLeft,
+          topRight: topRight,
+          bottomLeft: bottomLeft,
+          bottomRight: bottomRight,
         ),
       ),
     );
+  }
+}
+
+class _CornerPainter extends CustomPainter {
+  const _CornerPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.topLeft,
+    required this.topRight,
+    required this.bottomLeft,
+    required this.bottomRight,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final bool topLeft;
+  final bool topRight;
+  final bool bottomLeft;
+  final bool bottomRight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.square;
+
+    if (topLeft) {
+      canvas.drawLine(const Offset(0, 0), Offset(size.width, 0), paint);
+      canvas.drawLine(const Offset(0, 0), Offset(0, size.height), paint);
+    }
+    if (topRight) {
+      canvas.drawLine(
+        Offset.zero.translate(0, 0),
+        Offset(size.width, 0),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(size.width, 0),
+        Offset(size.width, size.height),
+        paint,
+      );
+    }
+    if (bottomLeft) {
+      canvas.drawLine(
+        Offset(0, size.height),
+        Offset(size.width, size.height),
+        paint,
+      );
+      canvas.drawLine(Offset(0, 0), Offset(0, size.height), paint);
+    }
+    if (bottomRight) {
+      canvas.drawLine(
+        Offset(0, size.height),
+        Offset(size.width, size.height),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(size.width, 0),
+        Offset(size.width, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CornerPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.topLeft != topLeft ||
+        oldDelegate.topRight != topRight ||
+        oldDelegate.bottomLeft != bottomLeft ||
+        oldDelegate.bottomRight != bottomRight;
   }
 }

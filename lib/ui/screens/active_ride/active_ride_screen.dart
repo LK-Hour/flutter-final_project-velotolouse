@@ -1,6 +1,7 @@
 import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:final_project_velotolouse/ui/widgets/animated_reveal_card.dart';
 import 'package:flutter/material.dart';
@@ -330,7 +331,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 Navigator.popUntil(context, (r) => r.isFirst);
                               },
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[600],
+                                foregroundColor: AppColors.warning,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
@@ -355,17 +356,25 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                               onPressed: () async {
                                 final rideRepo = context.read<RideRepository>();
                                 final bikeRepo = context.read<BikeRepository>();
+                                final stationMapViewModel = context
+                                    .read<StationMapViewModel>();
                                 _rideTimer.pause();
                                 await Future.wait([
                                   rideRepo.endRide(widget.sessionId),
                                   bikeRepo.lockBike(widget.bikeCode),
                                 ]);
+                                stationMapViewModel.endActiveRide();
                                 if (mounted) {
                                   Navigator.popUntil(context, (r) => r.isFirst);
                                 }
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.warning,
+                                foregroundColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  0,
+                                  0,
+                                ),
                                 side: const BorderSide(
                                   color: AppColors.warning,
                                   width: 2,

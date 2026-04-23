@@ -2,6 +2,7 @@ import 'package:final_project_velotolouse/data/repositories/bikes/firebase_stati
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station_bike_inventory_item.dart';
 import 'package:final_project_velotolouse/domain/repositories/bikes/station_bike_inventory_repository.dart';
+import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ class StationInfoPopup extends StatelessWidget {
     super.key,
     required this.station,
     required this.isReturnMode,
-    required this.onClose,
     required this.onNavigate,
     required this.onReturnBike,
     this.onViewBikes,
@@ -20,10 +20,22 @@ class StationInfoPopup extends StatelessWidget {
 
   final Station station;
   final bool isReturnMode;
-  final VoidCallback onClose;
   final VoidCallback onNavigate;
   final VoidCallback onReturnBike;
   final VoidCallback? onViewBikes;
+
+  void _onScanBikePressed(BuildContext context, StationBikeInventoryItem item) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => QrScannerScreen(
+          showDemoScanButton: true,
+          bikeCode: item.bikeCode ?? item.slotId,
+          stationId: station.id,
+          stationName: station.name,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,14 +76,6 @@ class StationInfoPopup extends StatelessWidget {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: onClose,
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: AppColors.neutralText,
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 2),
@@ -84,29 +88,26 @@ class StationInfoPopup extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+              if (isReturnMode)
+                _ReturnModeSummary(station: station)
+              else ...<Widget>[
+                _BikeInventoryPreview(
+                  station: station,
+                  repository: bikeRepository,
+                  onScanTap: (StationBikeInventoryItem item) =>
+                      _onScanBikePressed(context, item),
+                ),
+                const SizedBox(height: 10),
+              ],
               Row(
                 children: <Widget>[
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: onClose,
-                      child: const Text('Close'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
                     child: FilledButton(
-                      onPressed: isReturnMode ? onReturnBike : onNavigate,
-                      child: Text(
-                        isReturnMode ? 'Return Bike Here' : 'Navigate Here',
-                      ),
+                      onPressed: onNavigate,
+                      child: Text('Navigate Here'),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              _BikeInventoryPreview(
-                station: station,
-                repository: bikeRepository,
               ),
             ],
           ),
@@ -116,14 +117,84 @@ class StationInfoPopup extends StatelessWidget {
   }
 }
 
+class _ReturnModeSummary extends StatelessWidget {
+  const _ReturnModeSummary({required this.station});
+
+  final Station station;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isFull = station.freeDocks <= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isFull ? const Color(0xFFFFF1E8) : AppColors.baseSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isFull ? const Color(0xFFF5B38A) : const Color(0xFFE8E8E8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Return mode',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _StationInfoPill(
+                  label: 'Free docks',
+                  value: '${station.freeDocks}',
+                  backgroundColor: AppColors.success.withOpacity(0.12),
+                  valueColor: AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StationInfoPill(
+                  label: 'Total capacity',
+                  value: '${station.totalCapacity}',
+                  backgroundColor: AppColors.baseSurface,
+                  valueColor: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          if (isFull) ...<Widget>[
+            const SizedBox(height: 10),
+            const Text(
+              'This station is full. Choose another dock if you want to return the bike.',
+              style: TextStyle(
+                color: AppColors.neutralText,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _BikeInventoryPreview extends StatefulWidget {
   const _BikeInventoryPreview({
     required this.station,
     required this.repository,
+    required this.onScanTap,
   });
 
   final Station station;
   final StationBikeInventoryRepository repository;
+  final ValueChanged<StationBikeInventoryItem> onScanTap;
 
   @override
   State<_BikeInventoryPreview> createState() => _BikeInventoryPreviewState();
@@ -169,8 +240,10 @@ class _BikeInventoryPreviewState extends State<_BikeInventoryPreview> {
 
         final List<StationBikeInventoryItem> items =
             snapshot.data ?? const <StationBikeInventoryItem>[];
-    final int liveBikeCount = items.where((item) => item.isAvailable).length;
-    final int emptySlotCount = widget.station.totalCapacity - liveBikeCount;
+        final int liveBikeCount = items
+            .where((item) => item.isAvailable)
+            .length;
+        final int emptySlotCount = widget.station.totalCapacity - liveBikeCount;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +261,7 @@ class _BikeInventoryPreviewState extends State<_BikeInventoryPreview> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _StationInfoPill(
-                    label: 'Empty Slots',
+                    label: 'Unavailable Bikes',
                     value: '$emptySlotCount',
                     backgroundColor: AppColors.baseSurface,
                     valueColor: AppColors.textPrimary,
@@ -217,7 +290,10 @@ class _BikeInventoryPreviewState extends State<_BikeInventoryPreview> {
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                return _BikeSlotRow(item: items[index]);
+                return _BikeSlotRow(
+                  item: items[index],
+                  onScanTap: () => widget.onScanTap(items[index]),
+                );
               },
             ),
           ],
@@ -228,9 +304,10 @@ class _BikeInventoryPreviewState extends State<_BikeInventoryPreview> {
 }
 
 class _BikeSlotRow extends StatelessWidget {
-  const _BikeSlotRow({required this.item});
+  const _BikeSlotRow({required this.item, this.onScanTap});
 
   final StationBikeInventoryItem item;
+  final VoidCallback? onScanTap;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +362,7 @@ class _BikeSlotRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  item.bikeCode ?? 'Empty slot',
+                  item.bikeCode ?? 'Unavailable bike',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 14,
@@ -294,7 +371,7 @@ class _BikeSlotRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isAvailable ? 'Available' : 'Empty slot',
+                  isAvailable ? 'Available' : 'Unavailable bike',
                   style: TextStyle(
                     color: isAvailable
                         ? const Color(0xFF2FB463)
@@ -309,7 +386,7 @@ class _BikeSlotRow extends StatelessWidget {
           SizedBox(
             height: 30,
             child: FilledButton(
-              onPressed: isAvailable ? () {} : null,
+              onPressed: isAvailable ? onScanTap : null,
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFF15B00),
                 foregroundColor: Colors.white,
@@ -347,34 +424,32 @@ class _StationInfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              value,
-              style: TextStyle(
-                color: valueColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.neutralText,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.neutralText,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

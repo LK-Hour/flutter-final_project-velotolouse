@@ -22,7 +22,7 @@ class FirebaseBikeRepository implements BikeRepository {
     }
 
     await _client.patchObject('bikeInventory/$code', <String, dynamic>{
-      'status': 'empty',
+      'status': 'unavailable',
       'bikeCode': null,
     });
     await _adjustStationAvailability(record.stationId, -1);
@@ -103,14 +103,14 @@ class _BikeInventoryRecord {
     String fallbackCode,
     Map<String, dynamic> json,
   ) {
-    final String statusValue = (json['status'] as String? ?? 'empty')
+    final String statusValue = (json['status'] as String? ?? 'unavailable')
         .toLowerCase();
     return _BikeInventoryRecord(
       stationId: json['stationId'] as String? ?? 'capitole-square',
       slotId: json['slotId'] as String? ?? fallbackCode,
       status: statusValue == 'available'
           ? BikeSlotStatus.available
-          : BikeSlotStatus.empty,
+          : BikeSlotStatus.unavailable,
       bikeCode: json['bikeCode'] as String?,
     );
   }

@@ -51,11 +51,11 @@ class FirebaseStationBikeInventoryRepository
       return null;
     }
 
-    final String statusValue = (json['status'] as String? ?? 'empty')
+    final String statusValue = (json['status'] as String? ?? 'unavailable')
         .toLowerCase();
     final BikeSlotStatus status = statusValue == 'available'
         ? BikeSlotStatus.available
-        : BikeSlotStatus.empty;
+        : BikeSlotStatus.unavailable;
 
     return StationBikeInventoryItem(
       stationId: stationId,
