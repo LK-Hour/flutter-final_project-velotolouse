@@ -1,6 +1,7 @@
 import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
+import 'package:final_project_velotolouse/ui/screens/active_ride/ride_map_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,6 +48,19 @@ class ActiveRideScreen extends StatefulWidget {
 
 class _ActiveRideScreenState extends State<ActiveRideScreen> {
   late final RideTimerController _rideTimer;
+  late RideRepository _rideRepo;
+  late BikeRepository _bikeRepo;
+  bool _depsInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_depsInitialized) {
+      _depsInitialized = true;
+      _rideRepo = context.read<RideRepository>();
+      _bikeRepo = context.read<BikeRepository>();
+    }
+  }
 
   @override
   void initState() {
@@ -266,21 +280,57 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           ),
                           const SizedBox(height: 24),
 
+                          // Start Ride — opens the live ride map
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => RideMapScreen(
+                                      rideTimer: _rideTimer,
+                                      bikeCode: widget.bikeCode,
+                                      stationName: widget.stationName,
+                                      sessionId: widget.sessionId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.map_outlined),
+                              label: const Text(
+                                'Start Ride',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
                           // End Ride
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: () async {
-                                final rideRepo = context.read<RideRepository>();
-                                final bikeRepo = context.read<BikeRepository>();
                                 _rideTimer.pause();
+                                final NavigatorState navigator =
+                                    Navigator.of(context);
                                 await Future.wait([
-                                  rideRepo.endRide(widget.sessionId),
-                                  bikeRepo.lockBike(widget.bikeCode),
+                                  _rideRepo.endRide(widget.sessionId),
+                                  _bikeRepo.lockBike(widget.bikeCode),
                                 ]);
-                                if (mounted) {
-                                  Navigator.popUntil(context, (r) => r.isFirst);
-                                }
+                                navigator.popUntil((r) => r.isFirst);
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.warning,
