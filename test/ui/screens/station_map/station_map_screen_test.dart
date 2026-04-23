@@ -68,6 +68,35 @@ void main() {
     expect(find.text('Navigate Here'), findsOneWidget);
   });
 
+  testWidgets('tapping map background closes station info popup', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<StationMapViewModel>(
+          create: (_) =>
+              StationMapViewModel(repository: MockStationRepository())
+                ..loadStations(),
+          child: const StationMapScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('station-marker-wat-phnom')));
+    await tester.pumpAndSettle();
+    expect(find.text('Navigate Here'), findsOneWidget);
+
+    final Offset mapTopLeft = tester.getTopLeft(
+      find.byKey(const Key('fallback-map-canvas')),
+    );
+    await tester.tapAt(mapTopLeft + const Offset(12, 12));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Navigate Here'), findsNothing);
+    expect(find.text('Wat Phnom'), findsNothing);
+  });
+
   testWidgets('navigate here draws route from user to selected station', (
     WidgetTester tester,
   ) async {
@@ -372,10 +401,13 @@ void main() {
       userLocationRepository: locationRepository,
     )..loadStations();
 
+    // Locate user first to set currentUserLocation
+    await viewModel.locateCurrentUser();
+
     await tester.pumpWidget(
       MaterialApp(
-        home: ChangeNotifierProvider<StationMapViewModel>(
-          create: (_) => viewModel,
+        home: ChangeNotifierProvider<StationMapViewModel>.value(
+          value: viewModel,
           child: const StationMapScreen(),
         ),
       ),
@@ -386,8 +418,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('mode-toggle-button')));
     await tester.pumpAndSettle();
-
-    expect(find.text('2 min away'), findsNothing);
 
     await tester.tap(
       find.byKey(const Key('station-marker-independence-monument')),

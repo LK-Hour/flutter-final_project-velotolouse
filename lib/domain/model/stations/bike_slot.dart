@@ -3,11 +3,14 @@ enum BikeSlotStatus { available, unavailable }
 
 /// Represents a single docking slot at a station.
 class BikeSlot {
-  const BikeSlot({required this.id, required this.status, this.bikeCode})
-    : assert(
-        status != BikeSlotStatus.available || bikeCode != null,
-        'An available slot must have a bikeCode.',
-      );
+  const BikeSlot({
+    required this.id,
+    required this.status,
+    this.bikeCode,
+  }) : assert(
+          status != BikeSlotStatus.available || bikeCode != null,
+          'An available slot must have a bikeCode.',
+        );
 
   /// Unique slot identifier, e.g. "CO-01".
   final String id;
@@ -20,7 +23,11 @@ class BikeSlot {
 
   bool get isAvailable => status == BikeSlotStatus.available;
 
-  BikeSlot copyWith({String? id, BikeSlotStatus? status, String? bikeCode}) {
+  BikeSlot copyWith({
+    String? id,
+    BikeSlotStatus? status,
+    String? bikeCode,
+  }) {
     return BikeSlot(
       id: id ?? this.id,
       status: status ?? this.status,
