@@ -202,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Guest Rider',
+                          'Ronan The Best',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,
@@ -211,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Manage your pass and payment preferences',
+                          'The Best of the Best',
                           style: TextStyle(
                             color: AppColors.neutralText,
                             fontSize: 13,

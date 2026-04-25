@@ -65,18 +65,6 @@ class StationMapScreen extends StatelessWidget {
     viewModel.selectStation(selectedStationId);
   }
 
-  void _onTopRightButtonTapped(BuildContext context) {
-    if (kDebugMode) {
-      context.read<StationMapViewModel>().toggleReturnModeForTesting();
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Return mode switches automatically after bike booking.'),
-      ),
-    );
-  }
-
   void _onScanButtonPressed(
     BuildContext context,
     StationMapViewModel viewModel,
@@ -321,13 +309,6 @@ class StationMapScreen extends StatelessWidget {
                                     _onSearchTapped(context, viewModel),
                               ),
                             ),
-                            if (!viewModel.isReturnMode) ...<Widget>[
-                              const SizedBox(width: 10),
-                              StationMapModeButton(
-                                isReturnMode: viewModel.isReturnMode,
-                                onTap: () => _onTopRightButtonTapped(context),
-                              ),
-                            ],
                           ],
                         ),
                       ),
