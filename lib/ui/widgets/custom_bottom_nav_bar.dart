@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../themes/theme.dart';
+import '../../themes/theme.dart';
 
 /// Custom bottom navigation bar with 3 tabs and a central floating QR button.
 class CustomBottomNavBar extends StatelessWidget {
