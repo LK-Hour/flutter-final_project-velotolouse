@@ -1,6 +1,6 @@
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/ui/routing/app_router.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
-import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -484,6 +484,7 @@ class _StationsScreenState extends State<StationsScreen> {
                 slotNumber: index + 1,
                 isAvailable: slotsToShow[index],
                 showBikeButton: showBikeButton,
+                stationName: currentStation?.name ?? 'Unknown Station',
               );
             });
           }(),
@@ -654,16 +655,18 @@ class _BikeSlotItem extends StatelessWidget {
   final int slotNumber;
   final bool isAvailable;
   final bool showBikeButton;
+  final String stationName;
 
   const _BikeSlotItem({
     required this.slotNumber,
     required this.isAvailable,
+    required this.stationName,
     this.showBikeButton = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -743,33 +746,7 @@ class _BikeSlotItem extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          if (isAvailable)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QrScannerScreen(),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.warning,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Rent',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            )
-          else
+          if (!isAvailable)
             Icon(
               Icons.add,
               color: Colors.grey[400],
@@ -778,5 +755,53 @@ class _BikeSlotItem extends StatelessWidget {
         ],
       ),
     );
+
+    // Wrap available bikes in Dismissible for swipe-left to unlock
+    if (isAvailable) {
+      return Dismissible(
+        key: Key('bike_slot_$slotNumber'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          // Navigate to bike connecting screen
+          final bikeCode = 'BIKE-${slotNumber.toString().padLeft(2, '0')}';
+          Navigator.pushNamed(
+            context,
+            AppRoutes.bikeConnecting,
+            arguments: BikeConnectionArgs(
+              bikeCode: bikeCode,
+              stationName: stationName,
+            ),
+          );
+          return false; // Don't actually dismiss the widget
+        },
+        background: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: AppColors.warning,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerRight,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'Swipe to unlock',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(width: 12),
+              Icon(Icons.arrow_back, color: Colors.white, size: 24),
+            ],
+          ),
+        ),
+        child: content,
+      );
+    }
+
+    return content;
   }
 }

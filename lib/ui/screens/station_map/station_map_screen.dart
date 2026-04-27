@@ -1,5 +1,7 @@
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
+import 'package:final_project_velotolouse/services/ride_service.dart';
+import 'package:final_project_velotolouse/services/station_service.dart';
 import 'package:final_project_velotolouse/ui/screens/station_detail/stations_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
@@ -9,6 +11,8 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
+import 'package:final_project_velotolouse/ui/states/station_state.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +20,30 @@ import 'package:provider/provider.dart';
 
 class StationMapScreen extends StatelessWidget {
   const StationMapScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Create ViewModel with global states and services
+    return ChangeNotifierProvider<StationMapViewModel>(
+      create: (context) => StationMapViewModel(
+        rideState: context.read<RideState>(),
+        stationState: context.read<StationState>(),
+        stationService: context.read<StationService>(),
+        rideService: context.read<RideService>(),
+      ),
+      child: const _StationMapScreenContent(),
+    );
+  }
+}
+
+class _StationMapScreenContent extends StatefulWidget {
+  const _StationMapScreenContent();
+
+  @override
+  State<_StationMapScreenContent> createState() => _StationMapScreenContentState();
+}
+
+class _StationMapScreenContentState extends State<_StationMapScreenContent> {
 
   static const Map<String, Offset> _markerMapPosition = <String, Offset>{
     'capitole-square': Offset(0.34, 0.24),
@@ -72,19 +100,6 @@ class StationMapScreen extends StatelessWidget {
         content: Text('Return mode switches automatically after bike booking.'),
       ),
     );
-  }
-
-  void _onScanButtonPressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-  ) {
-    final bool hasStartedRide = viewModel.activateRideFromScan();
-    final String message = hasStartedRide
-        ? 'Bike unlocked. Return mode activated.'
-        : 'Ride already active. Return your bike at an available dock.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _onReturnModeBannerClose(StationMapViewModel viewModel) {
@@ -150,6 +165,15 @@ class StationMapScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _onEndRidePressed(BuildContext context, StationMapViewModel viewModel) async {
+    final bool success = await viewModel.endActiveRide();
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ride ended successfully.')),
+      );
+    }
   }
 
   @override
@@ -285,6 +309,44 @@ class StationMapScreen extends StatelessWidget {
                                   selectedStation,
                                 ),
                               ),
+                      ),
+                    // End Ride button - only show when there's an active ride
+                    if (viewModel.hasActiveRide && selectedStation == null)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 76,
+                        child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: () => _onEndRidePressed(context, viewModel),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'End Ride',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                       ),
                   ],
                 ),

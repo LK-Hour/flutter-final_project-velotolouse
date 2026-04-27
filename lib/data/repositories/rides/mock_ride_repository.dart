@@ -23,6 +23,7 @@ class MockRideRepository implements RideRepository {
 
     final session = RideSession(
       id: 'ride-${_idCounter++}',
+      userId: 'mock-user-001', // Mock user ID
       bikeCode: bikeCode,
       stationId: stationId,
       startedAt: DateTime.now(),

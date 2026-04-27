@@ -7,25 +7,40 @@ import 'package:final_project_velotolouse/domain/repositories/location/user_loca
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
 import 'package:final_project_velotolouse/main_common.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/services/ride_service.dart';
+import 'package:final_project_velotolouse/services/station_service.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+/// Development providers configuration using mock repositories.
+/// 
+/// Architecture layers (bottom-up):
+/// 1. Repositories (data layer) - abstract classes with mock implementations
+/// 2. Services (business logic) - stateless logic processors
+/// 3. Global States (managed in main_common.dart) - app-wide state
+/// 4. ViewModels (screen-level) - coordinate between states and UI
 List<SingleChildWidget> get devProviders {
   return <SingleChildWidget>[
+    // Layer 1: Repositories (data access layer)
     Provider<UserLocationRepository>(
       create: (_) => DeviceUserLocationRepository(),
     ),
-    Provider<StationRepository>(create: (_) => MockStationRepository()),
-    Provider<BikeRepository>(create: (_) => MockBikeRepository()),
-    Provider<RideRepository>(create: (_) => MockRideRepository()),
-    ChangeNotifierProvider<StationMapViewModel>(
-      create: (context) =>
-          StationMapViewModel(
-            repository: context.read<StationRepository>(),
-            userLocationRepository: context.read<UserLocationRepository>(),
-          )
-            ..loadStations(),
+    Provider<StationRepository>(
+      create: (_) => MockStationRepository(),
+    ),
+    Provider<BikeRepository>(
+      create: (_) => MockBikeRepository(),
+    ),
+    Provider<RideRepository>(
+      create: (_) => MockRideRepository(),
+    ),
+
+    // Layer 2: Services (business logic layer)
+    Provider<StationService>(
+      create: (_) => StationService(),
+    ),
+    Provider<RideService>(
+      create: (_) => RideService(),
     ),
   ];
 }
@@ -33,3 +48,4 @@ List<SingleChildWidget> get devProviders {
 void main() {
   mainCommon(devProviders);
 }
+

@@ -22,17 +22,58 @@ lib/
   data/
     repositories/           # Mock repository implementations
   domain/
-    model/                  # Domain entities (e.g., Station)
+    model/                  # Domain entities (Station, RideSession, BikeSlot)
     repositories/           # Repository contracts
+  services/                 # Business logic layer (stateless)
+    ride_service.dart       # Ride-related business logic
+    station_service.dart    # Station-related business logic
   ui/
-    screens/station_map/
-      view_model/           # ChangeNotifier view model
-      widgets/              # Reusable UI components
+    controllers/            # Specialized controllers (e.g., RideTimerController)
+    screens/                # Feature screens
+      station_map/
+        view_model/         # Screen-level ViewModel
+        widgets/            # Screen-specific widgets
+      active_ride/          # Ride success screen
+      bike_connecting/      # Bike unlock screen
+      station_detail/       # Station details with bike slots
+    states/                 # Global app-wide states
+      ride_state.dart       # Manages active ride session
+      station_state.dart    # Manages stations and map state
+    widgets/                # Shared reusable components
+    theme/                  # App theming
+    routing/                # Route definitions
   app.dart                  # MaterialApp setup
-  main.dart                 # Entry point
-  main_dev.dart             # Dev providers wiring
-  main_common.dart          # Shared runApp bootstrap
+  main.dart                 # Production entry point
+  main_dev.dart             # Development entry with mock providers
+  main_common.dart          # Shared app bootstrap
 ```
+
+## Architecture Layers
+
+The app follows **Clean Architecture** with clear separation of concerns:
+
+1. **Data Layer** (`data/repositories/`)
+   - Repository implementations (mock or real API)
+   - Data sources and models mapping
+
+2. **Domain Layer** (`domain/`)
+   - Business entities (models)
+   - Repository interfaces
+
+3. **Services Layer** (`services/`)
+   - Stateless business logic processors
+   - Pure functions for computations and validations
+   - No direct state management
+
+4. **State Layer** (`ui/states/`)
+   - Global app-wide state management with `ChangeNotifier`
+   - Listens to repository streams
+   - Provides state to multiple screens
+
+5. **Presentation Layer** (`ui/`)
+   - **ViewModels**: Screen-level coordinators, listen to global states
+   - **Screens**: UI composition and user interactions
+   - **Widgets**: Reusable UI components
 
 ## Implemented User Story (Current)
 

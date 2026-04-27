@@ -27,7 +27,7 @@ class MockBikeRepository implements BikeRepository {
     if (slot == null || !slot.isAvailable) return false;
 
     // Mark slot as empty (bike taken out).
-    _slots[code] = slot.copyWith(status: BikeSlotStatus.empty, bikeCode: null);
+    _slots[code] = slot.copyWith(bikeCode: null);
     return true;
   }
 
@@ -38,7 +38,6 @@ class MockBikeRepository implements BikeRepository {
     final slot = _slots[code];
     if (slot != null) {
       _slots[code] = slot.copyWith(
-        status: BikeSlotStatus.available,
         bikeCode: code,
       );
     }

@@ -19,6 +19,10 @@ class VeloToulouseApp extends StatelessWidget {
       theme: appTheme,
       home: const MainShell(),
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      onUnknownRoute: (settings) {
+        // Fallback for any unknown routes (including failed restorations)
+        return MaterialPageRoute(builder: (_) => const MainShell());
+      },
     );
   }
 }
@@ -38,10 +42,6 @@ class _MainShellState extends State<MainShell> {
     ProfileScreen(),    // Profile tab
   ];
 
-  void _onQrTap() {
-    Navigator.pushNamed(context, AppRoutes.qrScanner);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,7 +49,6 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        onQrTap: _onQrTap,
       ),
     );
   }

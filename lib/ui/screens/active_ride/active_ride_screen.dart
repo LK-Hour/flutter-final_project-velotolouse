@@ -1,7 +1,7 @@
-import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
-import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
+import 'dart:async';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
-import 'package:final_project_velotolouse/ui/screens/active_ride/ride_map_screen.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
+import 'package:final_project_velotolouse/ui/states/station_state.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -48,25 +48,32 @@ class ActiveRideScreen extends StatefulWidget {
 
 class _ActiveRideScreenState extends State<ActiveRideScreen> {
   late final RideTimerController _rideTimer;
-  late RideRepository _rideRepo;
-  late BikeRepository _bikeRepo;
-  bool _depsInitialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_depsInitialized) {
-      _depsInitialized = true;
-      _rideRepo = context.read<RideRepository>();
-      _bikeRepo = context.read<BikeRepository>();
-    }
-  }
+  Timer? _autoNavigationTimer;
 
   @override
   void initState() {
     super.initState();
     _rideTimer = RideTimerController()..start();
     _rideTimer.addListener(_onTick);
+    
+    // Set active ride flag in the global ride state
+    Future.microtask(() {
+      if (mounted) {
+        context.read<RideState>().setHasActiveRide(true);
+      }
+    });
+    
+    // Auto-navigate back to map after 3 seconds
+    _autoNavigationTimer = Timer(const Duration(seconds: 3), () async {
+      if (mounted) {
+        // Trigger user location on map before navigating back
+        final stationState = context.read<StationState>();
+        await stationState.locateCurrentUser();
+        if (mounted) {
+          Navigator.popUntil(context, (r) => r.isFirst);
+        }
+      }
+    });
   }
 
   void _onTick() {
@@ -75,6 +82,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   @override
   void dispose() {
+    _autoNavigationTimer?.cancel();
     _rideTimer
       ..removeListener(_onTick)
       ..dispose();
@@ -279,101 +287,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             ],
                           ),
                           const SizedBox(height: 24),
-
-                          // Start Ride — opens the live ride map
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => RideMapScreen(
-                                      rideTimer: _rideTimer,
-                                      bikeCode: widget.bikeCode,
-                                      stationName: widget.stationName,
-                                      sessionId: widget.sessionId,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.map_outlined),
-                              label: const Text(
-                                'Start Ride',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // End Ride
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () async {
-                                _rideTimer.pause();
-                                final NavigatorState navigator =
-                                    Navigator.of(context);
-                                await Future.wait([
-                                  _rideRepo.endRide(widget.sessionId),
-                                  _bikeRepo.lockBike(widget.bikeCode),
-                                ]);
-                                navigator.popUntil((r) => r.isFirst);
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.warning,
-                                side: const BorderSide(
-                                    color: AppColors.warning, width: 2),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'End Ride',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Back to Home Screen
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.popUntil(context, (r) => r.isFirst);
-                              },
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[600],
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Back to Home Screen',
-                                style: TextStyle(
-                                    fontSize: 15, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
