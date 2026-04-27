@@ -1,21 +1,15 @@
+import 'payment_transaction_core.dart';
+
 class SubscriptionTransaction {
   const SubscriptionTransaction({
-    required this.id,
+    required this.core,
     required this.planId,
     required this.planLabel,
-    required this.bankName,
-    required this.bankShortName,
-    required this.amountUsd,
-    required this.createdAt,
     this.status = 'active',
   });
 
-  final String id;
+  final PaymentTransactionCore core;
   final String planId;
   final String planLabel;
-  final String bankName;
-  final String bankShortName;
-  final double amountUsd;
-  final DateTime? createdAt;
   final String status;
 }

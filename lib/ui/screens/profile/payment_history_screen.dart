@@ -171,24 +171,24 @@ class _HistoryEntry {
   factory _HistoryEntry.fromInstant(InstantPaymentTransaction item) {
     return _HistoryEntry(
       typeLabel: 'Instant',
-      badge: item.bankShortName,
-      title: item.bankName,
+      badge: item.core.bankShortName,
+      title: item.core.bankName,
       subtitle:
-          'Instant payment - Duration: ${item.duration}, Distance: ${item.distanceKm.toStringAsFixed(1)} km',
-      amountUsd: item.amountUsd,
-      amountKhr: item.amountKhr,
-      createdAt: item.createdAt,
+          'Instant payment - Duration: ${item.rideDetails.duration}, Distance: ${item.rideDetails.distanceKm.toStringAsFixed(1)} km',
+      amountUsd: item.core.amountUsd,
+      amountKhr: item.rideDetails.amountKhr,
+      createdAt: item.core.createdAt,
     );
   }
 
   factory _HistoryEntry.fromSubscription(SubscriptionTransaction item) {
     return _HistoryEntry(
       typeLabel: 'Subscription',
-      badge: item.bankShortName,
+      badge: item.core.bankShortName,
       title: item.planLabel,
-      subtitle: '${item.planLabel} paid via ${item.bankName}',
-      amountUsd: item.amountUsd,
-      createdAt: item.createdAt,
+      subtitle: '${item.planLabel} paid via ${item.core.bankName}',
+      amountUsd: item.core.amountUsd,
+      createdAt: item.core.createdAt,
     );
   }
 

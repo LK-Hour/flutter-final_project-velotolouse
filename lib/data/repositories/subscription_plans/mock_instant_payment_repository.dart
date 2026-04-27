@@ -1,7 +1,9 @@
 import '../../../domain/model/subscription_plans/bank_option.dart';
 import '../../../domain/model/subscription_plans/instant_payment_data.dart';
 import '../../../domain/model/subscription_plans/instant_payment_transaction.dart';
+import '../../../domain/model/subscription_plans/payment_transaction_core.dart';
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
+import '../../../domain/model/subscription_plans/ride_transaction_details.dart';
 import '../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 import '../../../ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
@@ -70,14 +72,18 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
     _transactions.insert(
       0,
       InstantPaymentTransaction(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        bankName: bank.name,
-        bankShortName: bank.shortName,
-        amountUsd: summary.rideCostUsd,
-        amountKhr: summary.rideCostKhr,
-        duration: summary.duration,
-        distanceKm: summary.distanceKm,
-        createdAt: DateTime.now(),
+        core: PaymentTransactionCore(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          bankName: bank.name,
+          bankShortName: bank.shortName,
+          amountUsd: summary.rideCostUsd,
+          createdAt: DateTime.now(),
+        ),
+        rideDetails: RideTransactionDetails(
+          amountKhr: summary.rideCostKhr,
+          duration: summary.duration,
+          distanceKm: summary.distanceKm,
+        ),
       ),
     );
   }
@@ -100,13 +106,15 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
     _subscriptionTransactions.insert(
       0,
       SubscriptionTransaction(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        core: PaymentTransactionCore(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          bankName: bank.name,
+          bankShortName: bank.shortName,
+          amountUsd: amountUsd,
+          createdAt: DateTime.now(),
+        ),
         planId: planId,
         planLabel: planLabel,
-        bankName: bank.name,
-        bankShortName: bank.shortName,
-        amountUsd: amountUsd,
-        createdAt: DateTime.now(),
       ),
     );
     _refreshNotifier?.markUpdated();
