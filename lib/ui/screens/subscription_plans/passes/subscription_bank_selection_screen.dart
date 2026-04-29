@@ -56,7 +56,7 @@ class _SubscriptionBankSelectionScreenState
             ),
             SizedBox(height: 1),
             Text(
-              'Cambodia · KHQR',
+              'Cambodia - KHQR',
               style: TextStyle(color: Color(0xFFB2B2B2), fontSize: 12),
             ),
           ],
@@ -124,7 +124,7 @@ class _SubscriptionBankSelectionScreenState
                     ),
                   ),
                   child: Text(
-                    'Confirm · ${selectedBank.name}',
+                    'Confirm - ${selectedBank.name}',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                 ),

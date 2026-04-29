@@ -23,6 +23,7 @@ class FirebaseRideRepository implements RideRepository {
     final DateTime startedAt = DateTime.now();
     final String sessionId = await _client
         .postObject('rides', <String, dynamic>{
+          'userId': 'demo-user',
           'bikeCode': bikeCode,
           'stationId': stationId,
           'startedAt': startedAt.toIso8601String(),
@@ -31,6 +32,7 @@ class FirebaseRideRepository implements RideRepository {
 
     return RideSession(
       id: sessionId,
+      userId: 'demo-user',
       bikeCode: bikeCode,
       stationId: stationId,
       startedAt: startedAt,
@@ -96,6 +98,7 @@ class FirebaseRideRepository implements RideRepository {
   RideSession _rideFromJson(String id, Map<String, dynamic> json) {
     return RideSession(
       id: json['id'] as String? ?? id,
+      userId: json['userId'] as String? ?? 'demo-user',
       bikeCode: json['bikeCode'] as String? ?? '',
       stationId: json['stationId'] as String? ?? '',
       startedAt: DateTime.parse(json['startedAt'] as String),

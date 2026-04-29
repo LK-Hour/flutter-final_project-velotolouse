@@ -2,7 +2,7 @@ import 'package:final_project_velotolouse/domain/repositories/bikes/bike_reposit
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/bike_connecting/bike_connecting_screen.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/instant_payment_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/passes/daily_pass_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
@@ -108,12 +108,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
       }
 
       try {
-        context.read<StationMapViewModel>().activateRide(
-          sessionId: activeSession.id,
-          startedAt: activeSession.startedAt,
-          bikeCode: activeSession.bikeCode,
-          stationName: effectiveStationName,
-        );
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {
         // Screen may be used outside station map flow.
       }
@@ -132,12 +127,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
     if (activeRide != null) {
       try {
-        context.read<StationMapViewModel>().activateRide(
-          sessionId: activeRide.id,
-          startedAt: activeRide.startedAt,
-          bikeCode: activeRide.bikeCode,
-          stationName: effectiveStationName,
-        );
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {
         // Screen may be used outside station map flow.
       }
@@ -175,7 +165,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     }
 
     try {
-      context.read<StationMapViewModel>().setHasActiveRide(true);
+      context.read<RideState>().setHasActiveRide(true);
     } catch (_) {
       // Screen may be used outside station map flow.
     }

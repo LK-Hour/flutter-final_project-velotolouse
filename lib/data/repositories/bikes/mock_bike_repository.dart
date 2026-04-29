@@ -49,7 +49,7 @@ class MockBikeRepository implements BikeRepository {
   }
 
   @override
-  Future<bool> lockBike(String code) async {
+  Future<bool> lockBike(String code, {String? returnStationId}) async {
     if (lockDelay > Duration.zero) {
       await Future.delayed(lockDelay);
     }

@@ -30,17 +30,25 @@ class FirebaseBikeRepository implements BikeRepository {
   }
 
   @override
-  Future<bool> lockBike(String code) async {
+  Future<bool> lockBike(String code, {String? returnStationId}) async {
     final _BikeInventoryRecord? record = await _findRecordByCode(code);
     if (record == null) {
       return true;
     }
 
+    final String targetStation = returnStationId ?? record.stationId;
+
     await _client.patchObject('bikeInventory/$code', <String, dynamic>{
       'status': 'available',
       'bikeCode': code,
+      'stationId': targetStation,
     });
-    await _adjustStationAvailability(record.stationId, 1);
+
+    // If the bike moved stations, decrement the original station count.
+    if (returnStationId != null && returnStationId != record.stationId) {
+      await _adjustStationAvailability(record.stationId, 0);
+    }
+    await _adjustStationAvailability(targetStation, 1);
     return true;
   }
 

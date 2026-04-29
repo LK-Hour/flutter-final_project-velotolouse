@@ -155,7 +155,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                     foregroundColor: const Color(0xFFF15B00),
                   ),
                   child: const Text(
-                    '⚠ Report Issue',
+                    'Report Issue',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                 ),

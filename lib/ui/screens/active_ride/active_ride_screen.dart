@@ -1,9 +1,6 @@
-import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
-import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:final_project_velotolouse/ui/widgets/animated_reveal_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -74,44 +71,8 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _showRideCompletionModal() async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return RideCompletionModal(
-          bikeCode: widget.bikeCode,
-          stationName: widget.stationName,
-          rideDuration: _formattedTime,
-          onDone: () {
-            Navigator.of(dialogContext).pop();
-            Navigator.popUntil(
-              context,
-              (Route<dynamic> route) => route.isFirst,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _handleEndRidePressed() async {
-    final rideRepo = context.read<RideRepository>();
-    final bikeRepo = context.read<BikeRepository>();
-    final stationMapViewModel = context.read<StationMapViewModel>();
-
-    _rideTimer.pause();
-    await Future.wait([
-      rideRepo.endRide(widget.sessionId),
-      bikeRepo.lockBike(widget.bikeCode),
-    ]);
-    stationMapViewModel.endActiveRide();
-
-    if (!mounted) {
-      return;
-    }
-
-    await _showRideCompletionModal();
+  void _handleReturnBikePressed() {
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -152,7 +113,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha:0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -160,7 +121,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha:0.5),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -174,7 +135,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Bike Unlocked! 🎉',
+                  'Bike Unlocked!',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -200,7 +161,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       decoration: BoxDecoration(
                         color: i == 0
                             ? Colors.white
-                            : Colors.white.withOpacity(0.4),
+                            : Colors.white.withValues(alpha:0.4),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -227,7 +188,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.warning.withOpacity(0.1),
+                                  color: AppColors.warning.withValues(alpha:0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -390,22 +351,13 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // End Ride
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _handleEndRidePressed,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color.fromARGB(
-                                  255,
-                                  255,
-                                  0,
-                                  0,
-                                ),
-                                side: const BorderSide(
-                                  color: AppColors.warning,
-                                  width: 2,
-                                ),
+                            child: FilledButton(
+                              onPressed: _handleReturnBikePressed,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
@@ -414,7 +366,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'End Ride',
+                                'Return Bike',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -436,7 +388,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha:0.1),
                         blurRadius: 10,
                         offset: const Offset(0, -2),
                       ),

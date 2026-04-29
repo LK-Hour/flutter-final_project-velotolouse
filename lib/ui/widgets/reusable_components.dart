@@ -1,5 +1,5 @@
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import '../../themes/theme.dart';
 
 /// A full-width primary button with rounded corners (12px).
 class PrimaryButton extends StatelessWidget {
@@ -19,7 +19,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryOrange,
+          backgroundColor: AppColors.warning,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

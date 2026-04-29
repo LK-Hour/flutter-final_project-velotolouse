@@ -1,16 +1,19 @@
 import 'package:final_project_velotolouse/domain/model/location/geo_coordinate.dart';
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
-import 'package:final_project_velotolouse/domain/model/stations/station_bike_inventory_item.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
-import 'package:final_project_velotolouse/domain/repositories/bikes/station_bike_inventory_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/location/user_location_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/navigation/navigation_launcher_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/routes/station_route_repository.dart';
-import 'package:final_project_velotolouse/domain/repositories/stations/station_repository.dart';
+import 'package:final_project_velotolouse/services/ride_service.dart';
+import 'package:final_project_velotolouse/services/station_service.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
+import 'package:final_project_velotolouse/ui/states/station_state.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:async';
 
-enum ReturnBikeResult { success, noActiveRide, stationFull }
+// Re-export so screens can reference ReturnBikeResult from one import.
+export 'package:final_project_velotolouse/services/ride_service.dart'
+    show ReturnBikeResult;
 
 enum StationNavigationResult {
   opened,
@@ -21,265 +24,171 @@ enum StationNavigationResult {
   launcherUnavailable,
 }
 
+/// Thin coordination ViewModel for the Station Map screen.
+///
+/// Architecture (5-layer BlaBla pattern):
+///   • Delegates station data   → StationState
+///   • Delegates ride data      → RideState
+///   • Delegates business logic → StationService / RideService
+///   • Owns only screen-specific state (route path, map-center override)
 class StationMapViewModel extends ChangeNotifier {
   StationMapViewModel({
-    required StationRepository repository,
-    StationBikeInventoryRepository? stationBikeInventoryRepository,
+    required RideState rideState,
+    required StationState stationState,
+    required StationService stationService,
+    required RideService rideService,
+    required BikeRepository bikeRepository,
     UserLocationRepository? userLocationRepository,
     NavigationLauncherRepository? navigationLauncherRepository,
     StationRouteRepository? stationRouteRepository,
-  }) : _repository = repository,
-       _stationBikeInventoryRepository =
-           stationBikeInventoryRepository ??
-           const _UnavailableStationBikeInventoryRepository(),
-       _userLocationRepository =
-           userLocationRepository ?? const _UnavailableUserLocationRepository(),
-       _navigationLauncherRepository =
-           navigationLauncherRepository ??
-           const _UnavailableNavigationLauncherRepository(),
-       _stationRouteRepository =
-           stationRouteRepository ?? const _EmptyStationRouteRepository();
+  })  : _rideState = rideState,
+        _stationState = stationState,
+        _stationService = stationService,
+        _rideService = rideService,
+        _bikeRepository = bikeRepository,
+        _userLocationRepository =
+            userLocationRepository ??
+            const _UnavailableUserLocationRepository(),
+        _navigationLauncherRepository =
+            navigationLauncherRepository ??
+            const _UnavailableNavigationLauncherRepository(),
+        _stationRouteRepository =
+            stationRouteRepository ?? const _EmptyStationRouteRepository() {
+    _rideState.addListener(_onStateChanged);
+    _stationState.addListener(_onStateChanged);
+  }
 
-  final StationRepository _repository;
-  final StationBikeInventoryRepository _stationBikeInventoryRepository;
+  final RideState _rideState;
+  final StationState _stationState;
+  final StationService _stationService;
+  final RideService _rideService;
+  final BikeRepository _bikeRepository;
   final UserLocationRepository _userLocationRepository;
   final NavigationLauncherRepository _navigationLauncherRepository;
   final StationRouteRepository _stationRouteRepository;
-  static const GeoCoordinate defaultMapCenter = GeoCoordinate(
-    latitude: 11.5564,
-    longitude: 104.9282,
-  );
 
-  bool _isLoading = false;
-  String? _errorMessage;
-  List<Station> _stations = <Station>[];
-  Station? _selectedStation;
-  bool _hasActiveRide = false;
-  bool _isReturnBannerVisible = true;
-  String? _activeRideSessionId;
-  DateTime? _activeRideStartedAt;
-  String? _activeRideBikeCode;
-  String? _activeRideStationName;
-  Timer? _returnBannerAutoHideTimer;
-  GeoCoordinate _mapCenter = defaultMapCenter;
-  GeoCoordinate? _currentUserLocation;
-  List<GeoCoordinate> _activeRoutePath = <GeoCoordinate>[];
-  int _locateRequestVersion = 0;
+  // Screen-specific state (not suitable for global StationState)
+  GeoCoordinate? _mapCenterOverride;
+  List<GeoCoordinate> _activeRoutePath = const <GeoCoordinate>[];
+  int _locateVersionExtra = 0;
 
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  List<Station> get stations => List<Station>.unmodifiable(_stations);
-  Station? get selectedStation => _selectedStation;
-  bool get hasActiveRide => _hasActiveRide;
-  bool get isReturnMode => _hasActiveRide;
-  bool get showReturnModeBanner => isReturnMode && _isReturnBannerVisible;
-  String? get activeRideSessionId => _activeRideSessionId;
-  DateTime? get activeRideStartedAt => _activeRideStartedAt;
-  String? get activeRideBikeCode => _activeRideBikeCode;
-  String? get activeRideStationName => _activeRideStationName;
-  GeoCoordinate get mapCenter => _mapCenter;
-  GeoCoordinate? get currentUserLocation => _currentUserLocation;
+  // ─── Getters delegating to StationState ──────────────────────────────────
+
+  bool get isLoading => _stationState.isLoading;
+  String? get errorMessage => _stationState.errorMessage;
+  List<Station> get stations => _stationState.stations;
+  Station? get selectedStation => _stationState.selectedStation;
+  GeoCoordinate get mapCenter =>
+      _mapCenterOverride ?? _stationState.mapCenter;
+  GeoCoordinate? get currentUserLocation => _stationState.currentUserLocation;
+  int get locateRequestVersion =>
+      _stationState.locateRequestVersion + _locateVersionExtra;
   List<GeoCoordinate> get activeRoutePath =>
       List<GeoCoordinate>.unmodifiable(_activeRoutePath);
-  int get locateRequestVersion => _locateRequestVersion;
-  bool get showFullStationRerouteAlert {
-    return isReturnMode &&
-        _selectedStation != null &&
-        liveFreeDocksForStation(_selectedStation!) == 0;
+
+  // ─── Getters delegating to RideState ─────────────────────────────────────
+
+  bool get hasActiveRide => _rideState.hasActiveRide;
+  bool get isReturnMode => _rideState.hasActiveRide;
+  String? get activeRideBikeCode => _rideState.activeRide?.bikeCode;
+  DateTime? get activeRideStartedAt => _rideState.activeRide?.startedAt;
+  String? get activeRideSessionId => _rideState.activeRide?.id;
+
+  /// Looks up the station name from the active ride's stationId.
+  String? get activeRideStationName {
+    final String? stationId = _rideState.activeRide?.stationId;
+    if (stationId == null) return null;
+    return _stationService
+        .findStationById(_stationState.stations, stationId)
+        ?.name;
   }
 
+  // ─── Computed properties using services ──────────────────────────────────
+
+  bool get showReturnModeBanner => _rideService.shouldShowReturnBanner(
+    hasActiveRide: _rideState.hasActiveRide,
+    isBannerDismissed: _rideState.isReturnBannerDismissed,
+  );
+
+  bool get showFullStationRerouteAlert => _rideService.shouldShowFullStationAlert(
+    isReturnMode: isReturnMode,
+    selectedStation: _stationState.selectedStation,
+  );
+
   bool get showEmptyStationRerouteAlert {
-    return !isReturnMode &&
-        _selectedStation != null &&
-        liveAvailableBikesForStation(_selectedStation!) == 0;
+    final Station? station = _stationState.selectedStation;
+    return !isReturnMode && station != null && station.availableBikes == 0;
   }
 
   Station? get suggestedAlternativeDockStation {
-    if (!showFullStationRerouteAlert) {
-      return null;
-    }
-
-    return _findNearestStation(
-      selected: _selectedStation!,
-      isCandidate: (Station station) => liveFreeDocksForStation(station) > 0,
+    if (!showFullStationRerouteAlert) return null;
+    return _stationService.findNearestStationWithDocks(
+      _stationState.selectedStation!,
+      _stationState.stations,
     );
   }
 
   Station? get suggestedAlternativeBikeStation {
-    if (!showEmptyStationRerouteAlert) {
-      return null;
-    }
-
+    if (!showEmptyStationRerouteAlert) return null;
     return _findNearestStation(
-      selected: _selectedStation!,
-      isCandidate: (Station station) =>
-          liveAvailableBikesForStation(station) > 0,
+      selected: _stationState.selectedStation!,
+      isCandidate: (Station s) => s.availableBikes > 0,
     );
   }
 
-  Future<void> loadStations() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  // ─── Actions delegating to StationState ──────────────────────────────────
 
-    try {
-      final List<Station> loadedStations = await _repository.fetchStations();
-      _stations = await _hydrateStationsWithLiveAvailability(loadedStations);
-      if (_selectedStation != null) {
-        _selectedStation = _findStationById(_selectedStation!.id);
-      }
-    } on Exception {
-      _errorMessage = 'Unable to load stations. Please try again.';
-      _stations = <Station>[];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  Future<void> loadStations() => _stationState.loadStations();
 
-  void selectStation(String stationId) {
-    final Station? station = _findStationById(stationId);
-    if (station == null) {
-      return;
-    }
-    _selectedStation = station;
-    notifyListeners();
-  }
+  void selectStation(String stationId) =>
+      _stationState.selectStation(stationId);
 
-  void clearSelectedStation() {
-    if (_selectedStation == null) {
-      return;
-    }
-    _selectedStation = null;
-    notifyListeners();
-  }
+  void clearSelectedStation() => _stationState.clearSelectedStation();
 
-  void setHasActiveRide(bool value) {
-    if (_hasActiveRide == value) {
-      return;
-    }
-    _applyRideState(isActive: value);
-    notifyListeners();
-  }
+  // ─── Actions delegating to RideState ─────────────────────────────────────
 
-  void activateRide({
-    required String sessionId,
-    required DateTime startedAt,
-    required String bikeCode,
-    required String stationName,
-  }) {
-    _activeRideSessionId = sessionId;
-    _activeRideStartedAt = startedAt;
-    _activeRideBikeCode = bikeCode;
-    _activeRideStationName = stationName;
-    _applyRideState(isActive: true);
-    notifyListeners();
-  }
+  void dismissReturnModeBanner() => _rideState.dismissReturnBanner();
 
-  bool activateRideFromScan() {
-    if (_hasActiveRide) {
-      return false;
-    }
-    _applyRideState(isActive: true);
-    notifyListeners();
-    return true;
-  }
+  // ─── Actions using services ───────────────────────────────────────────────
 
-  bool endActiveRide() {
-    if (!_hasActiveRide) {
-      return false;
-    }
-    _applyRideState(isActive: false);
-    _activeRideSessionId = null;
-    _activeRideStartedAt = null;
-    _activeRideBikeCode = null;
-    _activeRideStationName = null;
-    notifyListeners();
-    return true;
-  }
+  List<Station> searchStations(String query) =>
+      _stationService.searchStations(
+        _stationState.stations,
+        query,
+        isReturnMode: isReturnMode,
+      );
 
-  ReturnBikeResult returnBikeToStation(Station station) {
-    if (!_hasActiveRide) {
-      return ReturnBikeResult.noActiveRide;
-    }
-    final Station? matchedStation = _findStationById(station.id);
-    final Station targetStation = matchedStation ?? station;
+  bool hasAvailabilityForCurrentMode(Station station) =>
+      _stationService.hasAvailability(station, isReturnMode: isReturnMode);
 
-    if (targetStation.freeDocks <= 0) {
-      return ReturnBikeResult.stationFull;
-    }
-    if (matchedStation != null) {
-      _stations = _stations
-          .map((Station currentStation) {
-            if (currentStation.id != matchedStation.id) {
-              return currentStation;
-            }
-            return currentStation.copyWith(
-              availableBikes: currentStation.availableBikes + 1,
-            );
-          })
-          .toList(growable: false);
-    }
-    _applyRideState(isActive: false);
-    _activeRideSessionId = null;
-    _activeRideStartedAt = null;
-    _activeRideBikeCode = null;
-    _activeRideStationName = null;
-    notifyListeners();
-    return ReturnBikeResult.success;
-  }
+  String availabilityLabelForCurrentMode(Station station) =>
+      _stationService.getAvailabilityLabel(station, isReturnMode: isReturnMode);
 
-  bool dismissReturnModeBanner() {
-    if (!showReturnModeBanner) {
-      return false;
-    }
-    _isReturnBannerVisible = false;
-    _returnBannerAutoHideTimer?.cancel();
-    notifyListeners();
-    return true;
-  }
-
-  void toggleReturnModeForTesting() {
-    _applyRideState(isActive: !_hasActiveRide);
-    notifyListeners();
-  }
+  // ─── Reroute helpers ─────────────────────────────────────────────────────
 
   void rerouteToSuggestedDock() {
-    final Station? suggestion = suggestedAlternativeDockStation;
-    if (suggestion == null) {
-      return;
-    }
-    _selectedStation = suggestion;
-    notifyListeners();
+    final Station? s = suggestedAlternativeDockStation;
+    if (s != null) _stationState.selectStation(s.id);
   }
 
   void rerouteToSuggestedBikeStation() {
-    final Station? suggestion = suggestedAlternativeBikeStation;
-    if (suggestion == null) {
-      return;
-    }
-    _selectedStation = suggestion;
-    notifyListeners();
+    final Station? s = suggestedAlternativeBikeStation;
+    if (s != null) _stationState.selectStation(s.id);
   }
 
+  // ─── Location & route (screen-specific) ──────────────────────────────────
+
+  /// Centers the map on the user's current location.
   Future<UserLocationStatus> locateCurrentUser() async {
-    final UserLocationResult result = await _userLocationRepository
-        .getCurrentLocation();
-    if (result.status != UserLocationStatus.located ||
-        result.coordinate == null) {
-      return result.status;
-    }
-
-    _mapCenter = result.coordinate!;
-    _currentUserLocation = result.coordinate!;
-    _locateRequestVersion += 1;
-    notifyListeners();
-    return UserLocationStatus.located;
+    _mapCenterOverride = null;
+    _activeRoutePath = const <GeoCoordinate>[];
+    return _stationState.locateCurrentUser();
   }
 
+  /// Fetches a cycling route to [station] and centers the map on it.
   Future<UserLocationStatus> showRouteToStation(Station station) async {
-    final UserLocationResult originResult = await _userLocationRepository
-        .getCurrentLocation();
+    final UserLocationResult originResult =
+        await _userLocationRepository.getCurrentLocation();
     if (originResult.status != UserLocationStatus.located ||
         originResult.coordinate == null) {
       return originResult.status;
@@ -289,35 +198,66 @@ class StationMapViewModel extends ChangeNotifier {
       latitude: station.latitude,
       longitude: station.longitude,
     );
-    final List<GeoCoordinate> roadRoute = await _stationRouteRepository
-        .fetchCyclingRoute(
+    final List<GeoCoordinate> roadRoute =
+        await _stationRouteRepository.fetchCyclingRoute(
           origin: originResult.coordinate!,
           destination: destination,
         );
 
-    _currentUserLocation = originResult.coordinate!;
-    _mapCenter = destination;
+    _mapCenterOverride = destination;
     _activeRoutePath = roadRoute.length >= 2
         ? roadRoute
         : <GeoCoordinate>[originResult.coordinate!, destination];
-    _locateRequestVersion += 1;
+    _locateVersionExtra += 1;
     notifyListeners();
     return UserLocationStatus.located;
   }
 
   bool focusOnStation(String stationId) {
-    final Station? station = _findStationById(stationId);
-    if (station == null) {
-      return false;
-    }
-
-    _mapCenter = GeoCoordinate(
+    final Station? station =
+        _stationService.findStationById(_stationState.stations, stationId);
+    if (station == null) return false;
+    _mapCenterOverride = GeoCoordinate(
       latitude: station.latitude,
       longitude: station.longitude,
     );
+    _locateVersionExtra += 1;
     notifyListeners();
     return true;
   }
+
+  // ─── Coordination: return bike ────────────────────────────────────────────
+
+  /// Validates, calls Firebase, and updates both global states.
+  ///
+  /// Returns [ReturnBikeResult.success] on success, or a failure reason.
+  Future<ReturnBikeResult> returnBikeToStation(Station station) async {
+    final ReturnBikeResult validation = _rideService.validateReturn(
+      hasActiveRide: _rideState.hasActiveRide,
+      station: station,
+    );
+    if (validation != ReturnBikeResult.success) return validation;
+
+    final activeRide = _rideState.activeRide;
+    if (activeRide == null) return ReturnBikeResult.noActiveRide;
+
+    // Run Firebase calls in parallel: end ride session + lock bike.
+    await Future.wait(<Future<dynamic>>[
+      _rideState.endActiveRide(),
+      _bikeRepository.lockBike(
+        activeRide.bikeCode,
+        returnStationId: station.id,
+      ),
+    ]);
+
+    // Update local station availability.
+    _stationState.updateStationAfterReturn(station.id);
+    _activeRoutePath = const <GeoCoordinate>[];
+    _mapCenterOverride = null;
+    return ReturnBikeResult.success;
+  }
+
+  // ─── Navigation (launch external maps app) ───────────────────────────────
 
   Future<StationNavigationResult> navigateToStation(Station station) async {
     if (kIsWeb) {
@@ -327,14 +267,13 @@ class StationMapViewModel extends ChangeNotifier {
           longitude: station.longitude,
         ),
       );
-      if (!didOpen) {
-        return StationNavigationResult.launcherUnavailable;
-      }
-      return StationNavigationResult.opened;
+      return didOpen
+          ? StationNavigationResult.opened
+          : StationNavigationResult.launcherUnavailable;
     }
 
-    final UserLocationResult originResult = await _userLocationRepository
-        .getCurrentLocation();
+    final UserLocationResult originResult =
+        await _userLocationRepository.getCurrentLocation();
     if (originResult.status != UserLocationStatus.located ||
         originResult.coordinate == null) {
       return _navigationResultFromLocationStatus(originResult.status);
@@ -347,158 +286,45 @@ class StationMapViewModel extends ChangeNotifier {
         longitude: station.longitude,
       ),
     );
-    if (!didOpen) {
-      return StationNavigationResult.launcherUnavailable;
-    }
-    return StationNavigationResult.opened;
+    return didOpen
+        ? StationNavigationResult.opened
+        : StationNavigationResult.launcherUnavailable;
   }
 
-  bool hasAvailabilityForCurrentMode(Station station) {
-    return isReturnMode
-        ? liveFreeDocksForStation(station) > 0
-        : liveAvailableBikesForStation(station) > 0;
-  }
-
-  String availabilityLabelForCurrentMode(Station station) {
-    return isReturnMode
-        ? '${liveFreeDocksForStation(station)} Docks'
-        : '${liveAvailableBikesForStation(station)} Bikes';
-  }
-
-  List<Station> searchStations(String query) {
-    final String normalizedQuery = query.trim().toLowerCase();
-    final List<Station> results = _stations
-        .where((Station station) {
-          if (normalizedQuery.isEmpty) {
-            return true;
-          }
-          final String name = station.name.toLowerCase();
-          final String address = station.address.toLowerCase();
-          return name.contains(normalizedQuery) ||
-              address.contains(normalizedQuery);
-        })
-        .toList(growable: true);
-
-    results.sort((Station a, Station b) {
-      final bool aHasAvailability = hasAvailabilityForCurrentMode(a);
-      final bool bHasAvailability = hasAvailabilityForCurrentMode(b);
-      if (aHasAvailability != bHasAvailability) {
-        return aHasAvailability ? -1 : 1;
-      }
-      return a.name.compareTo(b.name);
-    });
-
-    return results.toList(growable: false);
-  }
-
-  Station? _findStationById(String id) {
-    for (final Station station in _stations) {
-      if (station.id == id) {
-        return station;
-      }
-    }
-    return null;
-  }
-
-  Station? _findNearestStation({
-    required Station selected,
-    required bool Function(Station station) isCandidate,
-  }) {
-    Station? nearestStation;
-    double? nearestDistance;
-
-    for (final Station station in _stations) {
-      if (station.id == selected.id || !isCandidate(station)) {
-        continue;
-      }
-
-      final double distance = _distanceSquared(selected, station);
-      if (nearestStation == null || distance < nearestDistance!) {
-        nearestStation = station;
-        nearestDistance = distance;
-      }
-    }
-
-    return nearestStation;
-  }
-
-  int liveAvailableBikesForStation(Station station) {
-    for (final Station currentStation in _stations) {
-      if (currentStation.id == station.id) {
-        return currentStation.availableBikes;
-      }
-    }
-    return station.availableBikes;
-  }
-
-  int liveFreeDocksForStation(Station station) {
-    return station.totalCapacity - liveAvailableBikesForStation(station);
-  }
-
-  Future<List<Station>> _hydrateStationsWithLiveAvailability(
-    List<Station> stations,
-  ) async {
-    if (_stationBikeInventoryRepository
-        is _UnavailableStationBikeInventoryRepository) {
-      return stations;
-    }
-
-    if (stations.isEmpty) {
-      return stations;
-    }
-
-    final List<Future<Station>> hydratedStations = stations
-        .map((Station station) async {
-          final List<StationBikeInventoryItem> inventory =
-              await _stationBikeInventoryRepository.fetchBikesForStation(
-                station.id,
-              );
-          final int liveAvailableCount = inventory
-              .where((StationBikeInventoryItem item) => item.isAvailable)
-              .length;
-          return station.copyWith(availableBikes: liveAvailableCount);
-        })
-        .toList(growable: false);
-
-    return Future.wait(hydratedStations);
-  }
-
-  double _distanceSquared(Station a, Station b) {
-    final double latDiff = a.latitude - b.latitude;
-    final double lngDiff = a.longitude - b.longitude;
-    return (latDiff * latDiff) + (lngDiff * lngDiff);
-  }
-
-  void _applyRideState({required bool isActive}) {
-    _hasActiveRide = isActive;
-    _selectedStation = null;
-    _isReturnBannerVisible = isActive;
-    _activeRoutePath = <GeoCoordinate>[];
-
-    if (isActive) {
-      _scheduleReturnModeBannerAutoHide();
-    } else {
-      _activeRideSessionId = null;
-      _activeRideStartedAt = null;
-      _activeRideBikeCode = null;
-      _activeRideStationName = null;
-      _returnBannerAutoHideTimer?.cancel();
-      _returnBannerAutoHideTimer = null;
-    }
-  }
-
-  void _scheduleReturnModeBannerAutoHide() {
-    _returnBannerAutoHideTimer?.cancel();
-    _returnBannerAutoHideTimer = Timer(const Duration(seconds: 3), () {
-      _isReturnBannerVisible = false;
-      notifyListeners();
-    });
-  }
+  // ─── Dispose ─────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
-    _returnBannerAutoHideTimer?.cancel();
+    _rideState.removeListener(_onStateChanged);
+    _stationState.removeListener(_onStateChanged);
     super.dispose();
+  }
+
+  // ─── Private helpers ─────────────────────────────────────────────────────
+
+  void _onStateChanged() => notifyListeners();
+
+  Station? _findNearestStation({
+    required Station selected,
+    required bool Function(Station) isCandidate,
+  }) {
+    Station? nearest;
+    double? nearestDist;
+    for (final Station s in _stationState.stations) {
+      if (s.id == selected.id || !isCandidate(s)) continue;
+      final double d = _distanceSquared(selected, s);
+      if (nearest == null || d < nearestDist!) {
+        nearest = s;
+        nearestDist = d;
+      }
+    }
+    return nearest;
+  }
+
+  double _distanceSquared(Station a, Station b) {
+    final double dx = a.latitude - b.latitude;
+    final double dy = a.longitude - b.longitude;
+    return dx * dx + dy * dy;
   }
 
   StationNavigationResult _navigationResultFromLocationStatus(
@@ -518,13 +344,14 @@ class StationMapViewModel extends ChangeNotifier {
   }
 }
 
+// ─── Null-object stubs for optional dependencies ─────────────────────────────
+
 class _UnavailableUserLocationRepository implements UserLocationRepository {
   const _UnavailableUserLocationRepository();
 
   @override
-  Future<UserLocationResult> getCurrentLocation() async {
-    return const UserLocationResult(status: UserLocationStatus.unavailable);
-  }
+  Future<UserLocationResult> getCurrentLocation() async =>
+      const UserLocationResult(status: UserLocationStatus.unavailable);
 }
 
 class _UnavailableNavigationLauncherRepository
@@ -535,21 +362,7 @@ class _UnavailableNavigationLauncherRepository
   Future<bool> openDirections({
     GeoCoordinate? origin,
     required GeoCoordinate destination,
-  }) async {
-    return false;
-  }
-}
-
-class _UnavailableStationBikeInventoryRepository
-    implements StationBikeInventoryRepository {
-  const _UnavailableStationBikeInventoryRepository();
-
-  @override
-  Future<List<StationBikeInventoryItem>> fetchBikesForStation(
-    String stationId,
-  ) async {
-    return const <StationBikeInventoryItem>[];
-  }
+  }) async => false;
 }
 
 class _EmptyStationRouteRepository implements StationRouteRepository {
@@ -559,7 +372,5 @@ class _EmptyStationRouteRepository implements StationRouteRepository {
   Future<List<GeoCoordinate>> fetchCyclingRoute({
     required GeoCoordinate origin,
     required GeoCoordinate destination,
-  }) async {
-    return const <GeoCoordinate>[];
-  }
+  }) async => const <GeoCoordinate>[];
 }

@@ -315,7 +315,7 @@ class _Body extends StatelessWidget {
                               ),
                             )
                           : const Text(
-                              'Subscribe • \$1.99 / day',
+                              'Subscribe - \$1.99 / day',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,

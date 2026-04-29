@@ -1,17 +1,15 @@
+import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import '../../themes/theme.dart';
 
-/// Custom bottom navigation bar with 3 tabs and a central floating QR button.
+/// Custom bottom navigation bar with 2 tabs.
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final VoidCallback onQrTap;
 
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    required this.onQrTap,
   });
 
   @override
@@ -30,27 +28,6 @@ class CustomBottomNavBar extends StatelessWidget {
               label: 'Ride',
               isActive: currentIndex == 0,
               onTap: () => onTap(0),
-            ),
-            // Central QR Scanner Button
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C3E50),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                onPressed: onQrTap,
-                icon: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
-                padding: EdgeInsets.zero,
-              ),
             ),
             _NavBarItem(
               icon: Icons.person_outline,
@@ -80,7 +57,7 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppTheme.primaryOrange : const Color(0xFF9E9E9E);
+    final color = isActive ? AppColors.warning : const Color(0xFF9E9E9E);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,

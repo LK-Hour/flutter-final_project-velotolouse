@@ -2,6 +2,7 @@
 class RideSession {
   const RideSession({
     required this.id,
+    required this.userId,
     required this.bikeCode,
     required this.stationId,
     required this.startedAt,
@@ -10,6 +11,9 @@ class RideSession {
 
   /// Unique session identifier.
   final String id;
+
+  /// The user who is riding the bike.
+  final String userId;
 
   /// The code of the bike being ridden.
   final String bikeCode;
@@ -32,6 +36,7 @@ class RideSession {
 
   RideSession copyWith({
     String? id,
+    String? userId,
     String? bikeCode,
     String? stationId,
     DateTime? startedAt,
@@ -39,6 +44,7 @@ class RideSession {
   }) {
     return RideSession(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       bikeCode: bikeCode ?? this.bikeCode,
       stationId: stationId ?? this.stationId,
       startedAt: startedAt ?? this.startedAt,
@@ -48,5 +54,5 @@ class RideSession {
 
   @override
   String toString() =>
-      'RideSession(id: $id, bike: $bikeCode, active: $isActive)';
+      'RideSession(id: $id, userId: $userId, bike: $bikeCode, active: $isActive)';
 }
