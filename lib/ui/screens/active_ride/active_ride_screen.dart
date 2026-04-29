@@ -103,7 +103,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     _rideTimer.pause();
     await Future.wait([
       rideRepo.endRide(widget.sessionId),
-      bikeRepo.lockBike(widget.bikeCode),
+      bikeRepo.lockBike(widget.bikeCode, returnStationId: null),
     ]);
     stationMapViewModel.endActiveRide();
 

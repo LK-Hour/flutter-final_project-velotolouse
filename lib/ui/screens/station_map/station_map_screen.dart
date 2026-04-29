@@ -87,6 +87,10 @@ class StationMapScreen extends StatelessWidget {
       return;
     }
 
+    final String? returnStationId = viewModel.selectedStation?.id;
+    final String returnStationName =
+        viewModel.selectedStation?.name ?? stationName ?? 'Unknown station';
+
     try {
       final rideRepo = context.read<RideRepository>();
       final bikeRepo = context.read<BikeRepository>();
@@ -94,7 +98,10 @@ class StationMapScreen extends StatelessWidget {
       if (activeRide != null) {
         await Future.wait([
           rideRepo.endRide(sessionId),
-          bikeRepo.lockBike(activeRide.bikeCode),
+          bikeRepo.lockBike(
+            activeRide.bikeCode,
+            returnStationId: returnStationId,
+          ),
         ]);
       }
 
@@ -108,7 +115,7 @@ class StationMapScreen extends StatelessWidget {
         builder: (BuildContext dialogContext) {
           return RideCompletionModal(
             bikeCode: bikeCode ?? 'Unknown bike',
-            stationName: stationName ?? 'Unknown station',
+            stationName: returnStationName,
             rideDuration: _formatRideDuration(startedAt),
             onDone: () {
               Navigator.of(dialogContext).pop();
