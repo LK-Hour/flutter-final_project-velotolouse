@@ -10,7 +10,7 @@ abstract class BikeRepository {
   /// Returns true if the unlock succeeded, false otherwise.
   Future<bool> unlockBike(String code);
 
-  /// Marks the bike identified by [code] as locked (in-use → empty slot).
+  /// Marks the bike identified by [code] as locked (in-use → unavailable slot).
   /// Returns true if the lock succeeded, false otherwise.
   Future<bool> lockBike(String code);
 }

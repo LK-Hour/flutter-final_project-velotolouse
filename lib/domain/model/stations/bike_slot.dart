@@ -1,44 +1,34 @@
+/// Status values a bike slot can hold.
+enum BikeSlotStatus { available, unavailable }
+
 /// Represents a single docking slot at a station.
-/// 
-/// Status is computed from bike presence: if [bikeCode] is not null, the slot
-/// has a bike available; otherwise, the slot is empty.
 class BikeSlot {
-  const BikeSlot({
-    required this.id,
-    required this.stationId,
-    this.bikeCode,
-  });
+  const BikeSlot({required this.id, required this.status, this.bikeCode})
+    : assert(
+        status != BikeSlotStatus.available || bikeCode != null,
+        'An available slot must have a bikeCode.',
+      );
 
   /// Unique slot identifier, e.g. "CO-01".
   final String id;
 
-  /// The station this slot belongs to.
-  final String stationId;
+  /// Whether the slot holds a bike or is unavailable.
+  final BikeSlotStatus status;
 
-  /// The code of the bike currently docked, or null when empty.
+  /// The code of the bike currently docked, or null when unavailable.
   final String? bikeCode;
 
-  /// Whether this slot has a bike available for rental.
-  /// Computed from [bikeCode] presence.
-  bool get isAvailable => bikeCode != null;
+  bool get isAvailable => status == BikeSlotStatus.available;
 
-  /// Whether this slot is empty (no bike docked).
-  /// Computed from [bikeCode] absence.
-  bool get isEmpty => bikeCode == null;
-
-  BikeSlot copyWith({
-    String? id,
-    String? stationId,
-    String? bikeCode,
-  }) {
+  BikeSlot copyWith({String? id, BikeSlotStatus? status, String? bikeCode}) {
     return BikeSlot(
       id: id ?? this.id,
-      stationId: stationId ?? this.stationId,
-      bikeCode: bikeCode,
+      status: status ?? this.status,
+      bikeCode: bikeCode ?? this.bikeCode,
     );
   }
 
   @override
   String toString() =>
-      'BikeSlot(id: $id, stationId: $stationId, bikeCode: $bikeCode, isAvailable: $isAvailable)';
+      'BikeSlot(id: $id, status: ${status.name}, bikeCode: $bikeCode)';
 }

@@ -1,54 +1,33 @@
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
-import 'package:final_project_velotolouse/services/ride_service.dart';
-import 'package:final_project_velotolouse/services/station_service.dart';
-import 'package:final_project_velotolouse/ui/screens/station_detail/stations_screen.dart';
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner.dart';
-import 'package:final_project_velotolouse/ui/states/ride_state.dart';
-import 'package:final_project_velotolouse/ui/states/station_state.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner_transition.dart';
+import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
+import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
-import 'package:flutter/foundation.dart';
+import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 class StationMapScreen extends StatelessWidget {
   const StationMapScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    // Create ViewModel with global states and services
-    return ChangeNotifierProvider<StationMapViewModel>(
-      create: (context) => StationMapViewModel(
-        rideState: context.read<RideState>(),
-        stationState: context.read<StationState>(),
-        stationService: context.read<StationService>(),
-        rideService: context.read<RideService>(),
-      ),
-      child: const _StationMapScreenContent(),
-    );
-  }
-}
-
-class _StationMapScreenContent extends StatefulWidget {
-  const _StationMapScreenContent();
-
-  @override
-  State<_StationMapScreenContent> createState() => _StationMapScreenContentState();
-}
-
-class _StationMapScreenContentState extends State<_StationMapScreenContent> {
-
   static const Map<String, Offset> _markerMapPosition = <String, Offset>{
-    'capitole-square': Offset(0.34, 0.24),
-    'jean-jaures': Offset(0.24, 0.55),
-    'carmes': Offset(0.64, 0.52),
+    'wat-phnom': Offset(0.34, 0.24),
+    'central-market': Offset(0.24, 0.55),
+    'capitole-square': Offset(0.47, 0.39),
+    'independence-monument': Offset(0.64, 0.52),
+    'russian-market': Offset(0.74, 0.68),
   };
 
   Future<void> _onSearchTapped(
@@ -73,12 +52,7 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
             isReturnMode: viewModel.isReturnMode,
             availabilityLabelForStation:
                 viewModel.availabilityLabelForCurrentMode,
-            canSelectStation: (Station station) {
-              if (!viewModel.isReturnMode) {
-                return true;
-              }
-              return viewModel.hasAvailabilityForCurrentMode(station);
-            },
+            canSelectStation: viewModel.hasAvailabilityForCurrentMode,
           ),
         );
       },
@@ -90,16 +64,64 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
     viewModel.selectStation(selectedStationId);
   }
 
-  void _onTopRightButtonTapped(BuildContext context) {
-    if (kDebugMode) {
-      context.read<StationMapViewModel>().toggleReturnModeForTesting();
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Return mode switches automatically after bike booking.'),
+  void _onScanButtonPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const QrScannerScreen(showDemoScanButton: true),
       ),
     );
+  }
+
+  Future<void> _onEndRidePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) async {
+    final String? sessionId = viewModel.activeRideSessionId;
+    final DateTime? startedAt = viewModel.activeRideStartedAt;
+    final String? bikeCode = viewModel.activeRideBikeCode;
+    final String? stationName = viewModel.activeRideStationName;
+    if (sessionId == null || startedAt == null) {
+      return;
+    }
+
+    try {
+      final rideRepo = context.read<RideRepository>();
+      final bikeRepo = context.read<BikeRepository>();
+      final activeRide = await rideRepo.getActiveRide();
+      if (activeRide != null) {
+        await Future.wait([
+          rideRepo.endRide(sessionId),
+          bikeRepo.lockBike(activeRide.bikeCode),
+        ]);
+      }
+
+      if (!context.mounted) return;
+
+      viewModel.endActiveRide();
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return RideCompletionModal(
+            bikeCode: bikeCode ?? 'Unknown bike',
+            stationName: stationName ?? 'Unknown station',
+            rideDuration: _formatRideDuration(startedAt),
+            onDone: () {
+              Navigator.of(dialogContext).pop();
+            },
+          );
+        },
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to end ride. Please try again.')),
+      );
+    }
   }
 
   void _onReturnModeBannerClose(StationMapViewModel viewModel) {
@@ -131,55 +153,84 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _onNavigateHerePressed(BuildContext context, Station station) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Navigating to ${station.name}...')));
-  }
-
-  void _onReturnBikePressed(
+  Future<void> _onNavigateHerePressed(
     BuildContext context,
     StationMapViewModel viewModel,
     Station station,
-  ) {
-    final ReturnBikeResult result = viewModel.returnBikeToStation(station);
-    final String message = switch (result) {
-      ReturnBikeResult.success => 'Bike returned successfully.',
-      ReturnBikeResult.noActiveRide => 'No active ride to return.',
-      ReturnBikeResult.stationFull =>
-        'This station is full. Please choose another dock.',
+  ) async {
+    final UserLocationStatus status = await viewModel.showRouteToStation(
+      station,
+    );
+    if (!context.mounted || status == UserLocationStatus.located) {
+      return;
+    }
+
+    final String message = switch (status) {
+      UserLocationStatus.permissionDenied =>
+        'Location permission denied. Please allow GPS access.',
+      UserLocationStatus.permissionDeniedForever =>
+        'Location permission denied permanently. Enable it in settings.',
+      UserLocationStatus.serviceDisabled =>
+        'GPS is off. Please enable location services.',
+      UserLocationStatus.unavailable => 'Unable to get your current location.',
+      UserLocationStatus.located => '',
     };
+
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _onViewStationPressed(BuildContext context, Station station) {
-    final viewModel = context.read<StationMapViewModel>();
-    Navigator.push(
+  void _onRerouteToDockPressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    final Station? suggestion = viewModel.suggestedAlternativeDockStation;
+    viewModel.rerouteToSuggestedDock();
+    if (suggestion == null) {
+      return;
+    }
+    ScaffoldMessenger.of(
       context,
-      MaterialPageRoute(
-        builder: (context) => StationsScreen(
-          station: station,
-          allStations: viewModel.stations,
-        ),
-      ),
-    );
+    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
-  void _onEndRidePressed(BuildContext context, StationMapViewModel viewModel) async {
-    final bool success = await viewModel.endActiveRide();
-    if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ride ended successfully.')),
-      );
+  void _onRerouteToBikePressed(
+    BuildContext context,
+    StationMapViewModel viewModel,
+  ) {
+    final Station? suggestion = viewModel.suggestedAlternativeBikeStation;
+    viewModel.rerouteToSuggestedBikeStation();
+    if (suggestion == null) {
+      return;
     }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
+  }
+
+  void _onProfilePressed(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
+  }
+
+  String _formatRideDuration(DateTime startedAt) {
+    final Duration elapsed = DateTime.now().difference(startedAt);
+    final int hours = elapsed.inHours;
+    final int minutes = elapsed.inMinutes.remainder(60);
+    final int seconds = elapsed.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final StationMapViewModel viewModel = context.watch<StationMapViewModel>();
     final Station? selectedStation = viewModel.selectedStation;
+    final double bottomPanelHeight = viewModel.activeRideStartedAt == null
+        ? 138
+        : 176;
+    final double popupBottomOffset = bottomPanelHeight + 12;
 
     return Scaffold(
       backgroundColor: AppColors.baseSurfaceAlt,
@@ -225,21 +276,23 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
                           selectedStation: selectedStation,
                           mapCenter: viewModel.mapCenter,
                           currentUserLocation: viewModel.currentUserLocation,
+                          routePath: viewModel.activeRoutePath,
                           locateRequestVersion: viewModel.locateRequestVersion,
                           fallbackMarkerPositions: _markerMapPosition,
                           onStationTap: viewModel.selectStation,
+                          onMapTap: viewModel.clearSelectedStation,
                         ),
                       ),
-                    if (viewModel.showReturnModeBanner)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: ReturnModeBanner(
-                          onClose: () => _onReturnModeBannerClose(viewModel),
-                        ),
-                      )
-                    else
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: ReturnModeBannerTransition(
+                        visible: viewModel.showReturnModeBanner,
+                        onClose: () => _onReturnModeBannerClose(viewModel),
+                      ),
+                    ),
+                    if (!viewModel.showReturnModeBanner)
                       Positioned(
                         left: 16,
                         right: 16,
@@ -255,13 +308,6 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
                                     _onSearchTapped(context, viewModel),
                               ),
                             ),
-                            if (!viewModel.isReturnMode) ...<Widget>[
-                              const SizedBox(width: 10),
-                              StationMapModeButton(
-                                isReturnMode: viewModel.isReturnMode,
-                                onTap: () => _onTopRightButtonTapped(context),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -273,83 +319,70 @@ class _StationMapScreenContentState extends State<_StationMapScreenContent> {
                             _onLocateCurrentPositionPressed(context, viewModel),
                       ),
                     ),
-                    const Positioned(
-                      right: 48,
-                      bottom: 150,
-                      child: StationMapPinDot(),
-                    ),
                     if (selectedStation != null)
                       Positioned(
                         left: 16,
                         right: 16,
-                        bottom: 122,
+                        bottom: popupBottomOffset,
                         child: viewModel.showFullStationRerouteAlert
                             ? StationRerouteAlert(
                                 selectedStation: selectedStation,
                                 suggestedStation:
                                     viewModel.suggestedAlternativeDockStation,
-                                onReroute: viewModel.rerouteToSuggestedDock,
+                                onReroute: () =>
+                                    _onRerouteToDockPressed(context, viewModel),
                                 onClose: viewModel.clearSelectedStation,
+                              )
+                            : viewModel.showEmptyStationRerouteAlert
+                            ? StationRerouteAlert(
+                                selectedStation: selectedStation,
+                                suggestedStation:
+                                    viewModel.suggestedAlternativeBikeStation,
+                                onReroute: () =>
+                                    _onRerouteToBikePressed(context, viewModel),
+                                onClose: viewModel.clearSelectedStation,
+                                title: 'No Bikes Available',
+                                description:
+                                    'Your selected station ${selectedStation.name} has no available bikes.',
+                                noSuggestionMessage:
+                                    'No nearby station with bikes found.',
+                                suggestionLabelBuilder: (Station station) =>
+                                    '${station.availableBikes} bikes ready',
+                                rerouteButtonText: 'Reroute to Available Bike',
                               )
                             : StationInfoPopup(
                                 station: selectedStation,
                                 isReturnMode: viewModel.isReturnMode,
-                                onClose: viewModel.clearSelectedStation,
                                 onNavigate: () => _onNavigateHerePressed(
-                                  context,
-                                  selectedStation,
-                                ),
-                                onReturnBike: () => _onReturnBikePressed(
                                   context,
                                   viewModel,
                                   selectedStation,
                                 ),
-                                onViewStation: () => _onViewStationPressed(
-                                  context,
-                                  selectedStation,
-                                ),
                               ),
-                      ),
-                    // End Ride button - only show when there's an active ride
-                    if (viewModel.hasActiveRide && selectedStation == null)
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: 76,
-                        child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () => _onEndRidePressed(context, viewModel),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.warning,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'End Ride',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
                       ),
                   ],
                 ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: BottomRidePanel(
+                selectedStationName: selectedStation?.name,
+                isReturnMode: viewModel.isReturnMode,
+                activeRideBikeCode: viewModel.activeRideBikeCode,
+                activeRideStationName: viewModel.activeRideStationName,
+                activeRideStartedAt: viewModel.activeRideStartedAt,
+                onScanTap: viewModel.hasActiveRide
+                    ? null
+                    : () => _onScanButtonPressed(context, viewModel),
+                onProfileTap: viewModel.hasActiveRide
+                    ? null
+                    : () => _onProfilePressed(context),
+                onEndRide: viewModel.hasActiveRide
+                    ? () => _onEndRidePressed(context, viewModel)
+                    : null,
               ),
             ),
           ],

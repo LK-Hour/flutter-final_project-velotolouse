@@ -8,6 +8,14 @@ import 'package:final_project_velotolouse/domain/repositories/rides/ride_reposit
 /// Persists ride sessions in a local list for the app session.
 /// Broadcasts changes to [watchActiveRide] via a [StreamController].
 class MockRideRepository implements RideRepository {
+  MockRideRepository({
+    this.startDelay = const Duration(milliseconds: 300),
+    this.endDelay = const Duration(milliseconds: 300),
+  });
+
+  final Duration startDelay;
+  final Duration endDelay;
+
   final List<RideSession> _sessions = [];
   final StreamController<RideSession?> _activeRideController =
       StreamController<RideSession?>.broadcast();
@@ -19,11 +27,12 @@ class MockRideRepository implements RideRepository {
     required String bikeCode,
     required String stationId,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (startDelay > Duration.zero) {
+      await Future.delayed(startDelay);
+    }
 
     final session = RideSession(
       id: 'ride-${_idCounter++}',
-      userId: 'mock-user-001', // Mock user ID
       bikeCode: bikeCode,
       stationId: stationId,
       startedAt: DateTime.now(),
@@ -36,7 +45,9 @@ class MockRideRepository implements RideRepository {
 
   @override
   Future<RideSession> endRide(String sessionId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (endDelay > Duration.zero) {
+      await Future.delayed(endDelay);
+    }
 
     final index = _sessions.indexWhere((s) => s.id == sessionId);
     if (index == -1) throw StateError('Session $sessionId not found.');

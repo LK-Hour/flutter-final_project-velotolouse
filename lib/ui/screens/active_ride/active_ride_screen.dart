@@ -1,8 +1,10 @@
-import 'dart:async';
+import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
+import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/controllers/ride_timer_controller.dart';
-import 'package:final_project_velotolouse/ui/states/ride_state.dart';
-import 'package:final_project_velotolouse/ui/states/station_state.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
+import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
+import 'package:final_project_velotolouse/ui/widgets/animated_reveal_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -37,10 +39,10 @@ class ActiveRideScreen extends StatefulWidget {
 
   /// Convenience factory that builds from a typed [ActiveRideArgs] object.
   factory ActiveRideScreen.fromArgs(ActiveRideArgs args) => ActiveRideScreen(
-        bikeCode: args.bikeCode,
-        stationName: args.stationName,
-        sessionId: args.sessionId,
-      );
+    bikeCode: args.bikeCode,
+    stationName: args.stationName,
+    sessionId: args.sessionId,
+  );
 
   @override
   State<ActiveRideScreen> createState() => _ActiveRideScreenState();
@@ -48,41 +50,72 @@ class ActiveRideScreen extends StatefulWidget {
 
 class _ActiveRideScreenState extends State<ActiveRideScreen> {
   late final RideTimerController _rideTimer;
-  Timer? _autoNavigationTimer;
 
   @override
   void initState() {
     super.initState();
     _rideTimer = RideTimerController()..start();
     _rideTimer.addListener(_onTick);
-    
-    // Set active ride flag in the global ride state
-    Future.microtask(() {
-      if (mounted) {
-        context.read<RideState>().setHasActiveRide(true);
-      }
-    });
-    
-    // Auto-navigate back to map after 3 seconds
-    _autoNavigationTimer = Timer(const Duration(seconds: 3), () async {
-      if (mounted) {
-        // Trigger user location on map before navigating back
-        final stationState = context.read<StationState>();
-        await stationState.locateCurrentUser();
-        if (mounted) {
-          Navigator.popUntil(context, (r) => r.isFirst);
-        }
-      }
-    });
+    _syncTimerFromActiveSession();
+  }
+
+  Future<void> _syncTimerFromActiveSession() async {
+    final rideRepo = context.read<RideRepository>();
+    final activeRide = await rideRepo.getActiveRide();
+    if (!mounted || activeRide == null) {
+      return;
+    }
+
+    _rideTimer.pause();
+    _rideTimer.start(initialElapsed: activeRide.elapsed);
   }
 
   void _onTick() {
     if (mounted) setState(() {});
   }
 
+  Future<void> _showRideCompletionModal() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return RideCompletionModal(
+          bikeCode: widget.bikeCode,
+          stationName: widget.stationName,
+          rideDuration: _formattedTime,
+          onDone: () {
+            Navigator.of(dialogContext).pop();
+            Navigator.popUntil(
+              context,
+              (Route<dynamic> route) => route.isFirst,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleEndRidePressed() async {
+    final rideRepo = context.read<RideRepository>();
+    final bikeRepo = context.read<BikeRepository>();
+    final stationMapViewModel = context.read<StationMapViewModel>();
+
+    _rideTimer.pause();
+    await Future.wait([
+      rideRepo.endRide(widget.sessionId),
+      bikeRepo.lockBike(widget.bikeCode),
+    ]);
+    stationMapViewModel.endActiveRide();
+
+    if (!mounted) {
+      return;
+    }
+
+    await _showRideCompletionModal();
+  }
+
   @override
   void dispose() {
-    _autoNavigationTimer?.cancel();
     _rideTimer
       ..removeListener(_onTick)
       ..dispose();
@@ -194,8 +227,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color:
-                                      AppColors.warning.withOpacity(0.1),
+                                  color: AppColors.warning.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -231,6 +263,50 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
+
+                          AnimatedRevealCard(
+                            delay: const Duration(milliseconds: 120),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F4F1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFE8D6CB),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Bike Information',
+                                    style: TextStyle(
+                                      color: Color(0xFF6A4A3C),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _BikeDetailRow(
+                                    label: 'Bike code',
+                                    value: widget.bikeCode,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  _BikeDetailRow(
+                                    label: 'Station',
+                                    value: widget.stationName,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const _BikeDetailRow(
+                                    label: 'Status',
+                                    value: 'Active ride',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
 
                           // Active status indicator
                           Row(
@@ -287,6 +363,66 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             ],
                           ),
                           const SizedBox(height: 24),
+
+                          // Back to Home Screen
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.popUntil(context, (r) => r.isFirst);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.warning,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Back to Home Screen',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // End Ride
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _handleEndRidePressed,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  0,
+                                  0,
+                                ),
+                                side: const BorderSide(
+                                  color: AppColors.warning,
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'End Ride',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -310,14 +446,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _NavBarItem(
-                          icon: Icons.directions_bike,
-                          label: 'Ride',
-                          isActive: true),
+                        icon: Icons.directions_bike,
+                        label: 'Ride',
+                        isActive: true,
+                      ),
                       const SizedBox(width: 80),
                       _NavBarItem(
-                          icon: Icons.person_outline,
-                          label: 'Profile',
-                          isActive: false),
+                        icon: Icons.person_outline,
+                        label: 'Profile',
+                        isActive: false,
+                      ),
                     ],
                   ),
                 ),
@@ -381,12 +519,43 @@ class _StatBox extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
+    );
+  }
+}
+
+class _BikeDetailRow extends StatelessWidget {
+  const _BikeDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF8F8F8F),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF212121),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -407,9 +576,11 @@ class _NavBarItem extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon,
-            color: isActive ? AppColors.warning : Colors.grey[400],
-            size: 26),
+        Icon(
+          icon,
+          color: isActive ? AppColors.warning : Colors.grey[400],
+          size: 26,
+        ),
         const SizedBox(height: 4),
         Text(
           label,

@@ -1,7 +1,7 @@
 import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
-import 'package:final_project_velotolouse/ui/routing/app_router.dart';
+import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,11 +10,13 @@ import 'package:provider/provider.dart';
 class BikeConnectingScreen extends StatefulWidget {
   final String bikeCode;
   final String stationName;
+  final Duration connectionDelay;
 
   const BikeConnectingScreen({
     super.key,
     required this.bikeCode,
     required this.stationName,
+    this.connectionDelay = const Duration(seconds: 2),
   });
 
   @override
@@ -56,6 +58,26 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
     final bikeRepo = context.read<BikeRepository>();
     final rideRepo = context.read<RideRepository>();
 
+    final existingSession = await rideRepo.getActiveRide();
+    if (existingSession != null) {
+      if (!mounted) return;
+      try {
+        context.read<StationMapViewModel>().setHasActiveRide(true);
+      } catch (_) {
+        // Screen may be used outside station map flow.
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => ActiveRideScreen(
+            bikeCode: existingSession.bikeCode,
+            stationName: widget.stationName,
+            sessionId: existingSession.id,
+          ),
+        ),
+      );
+      return;
+    }
+
     // Run unlock + session creation + minimum delay in parallel.
     final sessionFuture = rideRepo.startRide(
       bikeCode: widget.bikeCode,
@@ -64,18 +86,26 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
     await Future.wait([
       bikeRepo.unlockBike(widget.bikeCode),
       sessionFuture,
-      Future.delayed(const Duration(seconds: 2)),
+      if (widget.connectionDelay > Duration.zero)
+        Future.delayed(widget.connectionDelay)
+      else
+        Future<void>.value(),
     ]);
     final session = await sessionFuture;
 
     if (mounted) {
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.activeRide,
-        arguments: ActiveRideArgs(
-          bikeCode: widget.bikeCode,
-          stationName: widget.stationName,
-          sessionId: session.id,
+      try {
+        context.read<StationMapViewModel>().setHasActiveRide(true);
+      } catch (_) {
+        // Screen may be used outside station map flow.
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => ActiveRideScreen(
+            bikeCode: widget.bikeCode,
+            stationName: widget.stationName,
+            sessionId: session.id,
+          ),
         ),
       );
     }
@@ -107,7 +137,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
       body: Column(
         children: [
           const SizedBox(height: 40),
-          
+
           // Progress stepper
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -121,7 +151,9 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                 Expanded(
                   child: Container(
                     height: 2,
-                    color: _currentStep >= 1 ? AppColors.warning : Colors.grey[300],
+                    color: _currentStep >= 1
+                        ? AppColors.warning
+                        : Colors.grey[300],
                   ),
                 ),
                 _StepIndicator(
@@ -132,7 +164,9 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                 Expanded(
                   child: Container(
                     height: 2,
-                    color: _currentStep >= 2 ? AppColors.warning : Colors.grey[300],
+                    color: _currentStep >= 2
+                        ? AppColors.warning
+                        : Colors.grey[300],
                   ),
                 ),
                 _StepIndicator(
@@ -186,10 +220,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
 
                   Text(
                     'Connecting to your bike...',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 24),
 
@@ -197,7 +228,8 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                   AnimatedBuilder(
                     animation: _progressAnimation,
                     builder: (context, child) {
-                      final percentage = (_progressAnimation.value * 100).toInt();
+                      final percentage = (_progressAnimation.value * 100)
+                          .toInt();
                       return Column(
                         children: [
                           ClipRRect(
@@ -226,7 +258,10 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
 
                   // Bike info
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
@@ -279,10 +314,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Cancel connection',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ),
                 ],
@@ -317,8 +349,8 @@ class _StepIndicator extends StatelessWidget {
             color: isComplete
                 ? AppColors.success
                 : isCurrent
-                    ? AppColors.warning
-                    : Colors.grey[300],
+                ? AppColors.warning
+                : Colors.grey[300],
             shape: BoxShape.circle,
           ),
           child: isComplete
@@ -331,7 +363,9 @@ class _StepIndicator extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             color: isComplete || isCurrent ? Colors.black87 : Colors.grey[500],
-            fontWeight: isComplete || isCurrent ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isComplete || isCurrent
+                ? FontWeight.w600
+                : FontWeight.normal,
           ),
         ),
       ],

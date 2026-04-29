@@ -32,13 +32,14 @@ import 'package:flutter/foundation.dart';
 class RideTimerController extends ChangeNotifier {
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _ticker;
+  Duration _initialElapsed = Duration.zero;
 
   // ── State ──────────────────────────────────────────────────────────────────
 
   bool get isRunning => _stopwatch.isRunning;
 
   /// Total elapsed duration sourced from the [Stopwatch].
-  Duration get elapsed => _stopwatch.elapsed;
+  Duration get elapsed => _initialElapsed + _stopwatch.elapsed;
 
   /// Elapsed time formatted as `HH:MM:SS`.
   String get formattedTime {
@@ -52,8 +53,16 @@ class RideTimerController extends ChangeNotifier {
   // ── Control ────────────────────────────────────────────────────────────────
 
   /// Starts (or resumes) the timer.
-  void start() {
+  ///
+  /// [initialElapsed] is only applied the first time start is called after a
+  /// reset, so resumed runs keep their existing baseline.
+  void start({Duration initialElapsed = Duration.zero}) {
     if (_stopwatch.isRunning) return;
+    if (_stopwatch.elapsed == Duration.zero &&
+        _initialElapsed == Duration.zero &&
+        initialElapsed > Duration.zero) {
+      _initialElapsed = initialElapsed;
+    }
     _stopwatch.start();
     _ticker ??= Timer.periodic(const Duration(seconds: 1), (_) {
       notifyListeners();
@@ -73,6 +82,7 @@ class RideTimerController extends ChangeNotifier {
     _stopwatch
       ..stop()
       ..reset();
+    _initialElapsed = Duration.zero;
     _ticker?.cancel();
     _ticker = null;
     notifyListeners();

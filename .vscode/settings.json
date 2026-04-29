@@ -1,0 +1,135 @@
+{
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.rulers": [
+            80
+        ],
+        "editor.selectionHighlight": false,
+        "editor.tabCompletion": "onlySnippets",
+        "editor.wordBasedSuggestions": "off"
+    },
+    "git.enableSmartCommit": true,
+    "diffEditor.codeLens": true,
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "explorer.confirmDelete": false,
+    "explorer.confirmPasteNative": false,
+    "explorer.confirmDragAndDrop": false,
+    "files.autoSave": "afterDelay",
+    "gitlens.ai.model": "vscode",
+    "gitlens.ai.vscode.model": "copilot:claude-sonnet-4.5",
+    "python.createEnvironment.trigger": "off",
+    "redhat.telemetry.enabled": true,
+    "workbench.colorTheme": "Bearded Theme OLED (Experimental)",
+    "workbench.iconTheme": "material-icon-theme",
+    "http.systemCertificatesNode": true,
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "workbench.editorAssociations": {
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "*.md": "default"
+    },
+    "indentRainbow.colors": [
+        "rgba(3, 4, 94,0.15)",
+        "rgba(2, 62, 138,0.15)",
+        "rgba(0, 119, 182, 0.15)",
+        "rgba(0, 150, 199,0.15)",
+        "rgba(0, 180, 216,0.15)",
+        "rgba(72, 202, 228,0.15)",
+        "rgba(144, 224, 239,0.15)",
+        "rgba(144, 224, 239,0.1)",
+        "rgba(144, 224, 239,0.05)",
+        "rgba(144, 224, 239,0.025)"
+    ],
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "security.workspace.trust.untrustedFiles": "open",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "security.workspace.trust.banner": "always",
+    "chat.agent.maxRequests": 100,
+    "chat.instructionsFilesLocations": {
+        ".github/instructions": true,
+        "/tmp/postman-collections-post-response.instructions.md": true,
+        "/tmp/postman-collections-pre-request.instructions.md": true,
+        "/tmp/postman-folder-post-response.instructions.md": true,
+        "/tmp/postman-folder-pre-request.instructions.md": true,
+        "/tmp/postman-http-request-post-response.instructions.md": true,
+        "/tmp/postman-http-request-pre-request.instructions.md": true
+    },
+    "gitlens.views.scm.grouped.views": {
+        "commits": true,
+        "branches": true,
+        "remotes": true,
+        "stashes": true,
+        "tags": true,
+        "worktrees": true,
+        "contributors": true,
+        "fileHistory": false,
+        "repositories": true,
+        "searchAndCompare": true,
+        "launchpad": false
+    },
+    "chat.viewSessions.orientation": "stacked",
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "debug.console.acceptSuggestionOnEnter": "on",
+
+  "editor.autoIndent": "full",
+  "editor.formatOnType": true,
+  "editor.formatOnPaste": true,
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.detectIndentation": true,
+  "editor.inlineSuggest.enabled": false,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false,
+  },
+
+  "update.mode": "manual",
+
+  "chat.disableAIFeatures": false,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": false,
+    "windsurf": false,
+    "cursor-global": false,
+    "cursor-workspace": false
+},
+
+  "chat.viewTitle.enabled": false,
+  "chat.viewWelcome.enabled": false,
+  "chat.math.enabled": false,
+  "chat.sendElementsToChat.enabled": false,
+  "chat.checkpoints.enabled": false,
+  "chat.commandCenter.enabled": false,
+  "chat.agent.maxRequests": 0,
+  "chat.detectParticipant.enabled": false,
+  "chat.extensionTools.enabled": false,
+  "mermaid-chat.enabled": false,
+  "chat.extensionUnification.enabled": false,
+  "chat.mcp.access": "none",
+  "chat.mcp.autostart": "never",
+  "chat.mcp.assisted.nuget.enabled": false,
+  "chat.mcp.gallery.enabled": false,
+  "telemetry.editStats.details.enabled": false,
+  "telemetry.editStats.showDecorations": false,
+  "telemetry.feedback.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "chat.agent.enabled": false,
+  "chat.allowAnonymousAccess": false,
+  "chat.customAgentInSubagent.enabled": false,
+  "chat.edits2.enabled": false,
+  "inlineChat.enableV2": false,
+  "chat.useAgentSkills": false,
+
+  "github.copilot.enable": false,
+"github.copilot.inlineSuggest.enable": false,
+"claudeCode.preferredLocation": "panel",
+
+}

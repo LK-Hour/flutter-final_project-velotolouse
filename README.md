@@ -91,15 +91,76 @@ Implemented behaviors include:
 - Keeping station search available in return mode once the banner is dismissed
 - Using return-mode specific search prompt: "Find a station with free docks..."
 - Sorting return search results to show stations with free docks first
+- Showing return-mode empty state: "No station with free docks found"
+- Marking empty-bike stations in renting search and preventing invalid selection
+- Showing a clear "No bikes available" hint for disabled renting-search stations
+- Sorting renting search results to show stations with bikes first
+- Suggesting nearest bike station when selected renting station has no bikes
 - Suggesting alternative stations when selected return station has no free docks
+- Showing reroute confirmation feedback after auto-selecting suggested station
+- Showing a return-mode bottom status label: "Return in progress"
 - Bottom action area with ride/profile + scan button
 
 ## Run the Project
+
+Set your Google Directions key once:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
+
+```env
+GOOGLE_DIRECTIONS_API_KEY=YOUR_KEY_HERE
+```
+
+Run the app:
 
 ```bash
 flutter pub get
 flutter run
 ```
+
+## Firebase Backend Setup
+
+The instant payment flow now supports a Firebase backend (Cloud Firestore).
+
+1. Install FlutterFire CLI:
+
+```bash
+dart pub global activate flutterfire_cli
+```
+
+2. Login and configure your Firebase project for this app:
+
+```bash
+flutterfire configure
+```
+
+3. Enable Cloud Firestore in Firebase Console.
+
+4. Create the Firestore data used by the app:
+
+- Document: `app_config/instant_payment`
+  - `ride_cost_usd` (number)
+  - `ride_cost_khr` (number)
+  - `duration` (string)
+  - `distance_km` (number)
+
+- Subcollection: `app_config/instant_payment/bank_options`
+  - each document fields:
+    - `short_name` (string)
+    - `name` (string)
+    - `subtitle` (string)
+    - `color_hex` (number, e.g. `4280176275`)
+    - `order` (number)
+
+When users pay, transactions are written to:
+
+- Collection: `instant_payment_transactions`
+
+If Firebase is not configured yet, the app automatically falls back to mock data.
 
 ## Development Commands
 
@@ -119,4 +180,5 @@ This helps test responsive layouts quickly across multiple virtual devices.
 ## Notes
 
 - Current design assets available in this repo are centered on **User Story 2**.
+- Mock station data is currently configured around **Phnom Penh, Cambodia**.
 - Work is being delivered incrementally with small, reviewable steps.
