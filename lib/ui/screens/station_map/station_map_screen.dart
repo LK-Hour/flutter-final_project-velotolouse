@@ -1,7 +1,5 @@
 import 'package:final_project_velotolouse/domain/model/location/user_location_result.dart';
 import 'package:final_project_velotolouse/domain/model/stations/station.dart';
-import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
-import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/map_quick_actions.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_controls.dart';
@@ -15,7 +13,6 @@ import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:async';
 
 class StationMapScreen extends StatelessWidget {
   const StationMapScreen({super.key});
@@ -56,45 +53,46 @@ class StationMapScreen extends StatelessWidget {
       },
     );
 
-    if (!context.mounted || selectedStationId == null) {
-      return;
-    }
+    if (!context.mounted || selectedStationId == null) return;
     viewModel.selectStation(selectedStationId);
   }
 
+  /// Ends the active ride by delegating to the ViewModel.
+  ///
+  /// The ViewModel validates, calls Firebase (endRide + lockBike in parallel),
+  /// and updates global states — the screen only shows the completion dialog.
   Future<void> _onEndRidePressed(
     BuildContext context,
     StationMapViewModel viewModel,
   ) async {
-    final String? sessionId = viewModel.activeRideSessionId;
-    final DateTime? startedAt = viewModel.activeRideStartedAt;
-    final String? bikeCode = viewModel.activeRideBikeCode;
-    final String? stationName = viewModel.activeRideStationName;
-    if (sessionId == null || startedAt == null) {
+    final Station? returnStation = viewModel.selectedStation;
+    if (returnStation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a return station on the map first.'),
+        ),
+      );
       return;
     }
 
-    final String? returnStationId = viewModel.selectedStation?.id;
-    final String returnStationName =
-        viewModel.selectedStation?.name ?? stationName ?? 'Unknown station';
+    final DateTime? startedAt = viewModel.activeRideStartedAt;
+    final String? bikeCode = viewModel.activeRideBikeCode;
 
     try {
-      final rideRepo = context.read<RideRepository>();
-      final bikeRepo = context.read<BikeRepository>();
-      final activeRide = await rideRepo.getActiveRide();
-      if (activeRide != null) {
-        await Future.wait([
-          rideRepo.endRide(sessionId),
-          bikeRepo.lockBike(
-            activeRide.bikeCode,
-            returnStationId: returnStationId,
-          ),
-        ]);
-      }
+      final ReturnBikeResult result =
+          await viewModel.returnBikeToStation(returnStation);
 
       if (!context.mounted) return;
 
-      viewModel.endActiveRide();
+      if (result == ReturnBikeResult.stationFull) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Station is full. Please choose another station.'),
+          ),
+        );
+        return;
+      }
+      if (result != ReturnBikeResult.success) return;
 
       await showDialog<void>(
         context: context,
@@ -102,18 +100,18 @@ class StationMapScreen extends StatelessWidget {
         builder: (BuildContext dialogContext) {
           return RideCompletionModal(
             bikeCode: bikeCode ?? 'Unknown bike',
-            stationName: returnStationName,
+            stationName: returnStation.name,
             rideDuration: _formatRideDuration(startedAt),
-            onDone: () {
-              Navigator.of(dialogContext).pop();
-            },
+            onDone: () => Navigator.of(dialogContext).pop(),
           );
         },
       );
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to end ride. Please try again.')),
+        const SnackBar(
+          content: Text('Failed to end ride. Please try again.'),
+        ),
       );
     }
   }
@@ -127,9 +125,7 @@ class StationMapScreen extends StatelessWidget {
     StationMapViewModel viewModel,
   ) async {
     final UserLocationStatus status = await viewModel.locateCurrentUser();
-    if (!context.mounted) {
-      return;
-    }
+    if (!context.mounted) return;
 
     final String message = switch (status) {
       UserLocationStatus.located => 'Centered on your current location.',
@@ -139,12 +135,11 @@ class StationMapScreen extends StatelessWidget {
         'Location permission denied permanently. Enable it in settings.',
       UserLocationStatus.serviceDisabled =>
         'GPS is off. Please enable location services.',
-      UserLocationStatus.unavailable => 'Unable to find your current location.',
+      UserLocationStatus.unavailable =>
+        'Unable to find your current location.',
     };
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onStationMarkerTapped(
@@ -166,6 +161,12 @@ class StationMapScreen extends StatelessWidget {
         child: StationInfoPopup(
           station: station,
           isReturnMode: viewModel.isReturnMode,
+          onReturnBike: viewModel.isReturnMode
+              ? () async {
+                  Navigator.of(context).pop();
+                  await _onEndRidePressed(context, viewModel);
+                }
+              : null,
           onNavigate: () async {
             Navigator.of(context).pop();
             final UserLocationStatus status =
@@ -194,17 +195,20 @@ class StationMapScreen extends StatelessWidget {
   }
 
   void _onProfilePressed(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
+    );
   }
 
-  String _formatRideDuration(DateTime startedAt) {
+  String _formatRideDuration(DateTime? startedAt) {
+    if (startedAt == null) return '00:00:00';
     final Duration elapsed = DateTime.now().difference(startedAt);
     final int hours = elapsed.inHours;
     final int minutes = elapsed.inMinutes.remainder(60);
     final int seconds = elapsed.inSeconds.remainder(60);
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
   }
 
   @override

@@ -5,7 +5,7 @@ import 'package:final_project_velotolouse/domain/repositories/bikes/bike_reposit
 import 'package:final_project_velotolouse/domain/repositories/bikes/station_bike_inventory_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -17,11 +17,13 @@ class StationInfoPopup extends StatelessWidget {
     required this.station,
     required this.isReturnMode,
     required this.onNavigate,
+    this.onReturnBike,
   });
 
   final Station station;
   final bool isReturnMode;
   final VoidCallback onNavigate;
+  final VoidCallback? onReturnBike;
 
   Future<void> _onUnlockBike(
     BuildContext context,
@@ -36,12 +38,7 @@ class StationInfoPopup extends StatelessWidget {
 
     if (activeRide != null) {
       try {
-        context.read<StationMapViewModel>().activateRide(
-          sessionId: activeRide.id,
-          startedAt: activeRide.startedAt,
-          bikeCode: activeRide.bikeCode,
-          stationName: station.name,
-        );
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {}
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
@@ -64,12 +61,7 @@ class StationInfoPopup extends StatelessWidget {
       if (!context.mounted) return;
 
       try {
-        context.read<StationMapViewModel>().activateRide(
-          sessionId: activeSession.id,
-          startedAt: activeSession.startedAt,
-          bikeCode: activeSession.bikeCode,
-          stationName: station.name,
-        );
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {}
 
       Navigator.of(context).pushReplacement(
@@ -143,6 +135,24 @@ class StationInfoPopup extends StatelessWidget {
               if (isReturnMode) ...<Widget>[
                 _ReturnModeSummary(station: station),
                 const SizedBox(height: 10),
+                if (onReturnBike != null) ...<Widget>[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: station.freeDocks > 0 ? onReturnBike : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        disabledBackgroundColor: AppColors.muted,
+                      ),
+                      child: Text(
+                        station.freeDocks > 0
+                            ? 'Return Bike Here'
+                            : 'Station Full - Choose Another',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(

@@ -1,7 +1,7 @@
 import 'package:final_project_velotolouse/domain/repositories/bikes/bike_repository.dart';
 import 'package:final_project_velotolouse/domain/repositories/rides/ride_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/active_ride/active_ride_screen.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
+import 'package:final_project_velotolouse/ui/states/ride_state.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -62,7 +62,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
     if (existingSession != null) {
       if (!mounted) return;
       try {
-        context.read<StationMapViewModel>().setHasActiveRide(true);
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {
         // Screen may be used outside station map flow.
       }
@@ -95,7 +95,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
 
     if (mounted) {
       try {
-        context.read<StationMapViewModel>().setHasActiveRide(true);
+        context.read<RideState>().setHasActiveRide(true);
       } catch (_) {
         // Screen may be used outside station map flow.
       }

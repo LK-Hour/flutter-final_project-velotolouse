@@ -16,28 +16,33 @@ import 'package:final_project_velotolouse/domain/repositories/stations/station_r
 import 'package:final_project_velotolouse/domain/repositories/subscription_plans/instant_payment_repository.dart';
 import 'package:final_project_velotolouse/firebase_options.dart';
 import 'package:final_project_velotolouse/main_common.dart';
+import 'package:final_project_velotolouse/services/ride_service.dart';
+import 'package:final_project_velotolouse/services/station_service.dart';
+import 'package:final_project_velotolouse/ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
-import 'package:final_project_velotolouse/ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 String get _googleDirectionsApiKey {
-  if (!dotenv.isInitialized) {
-    return '';
-  }
-
+  if (!dotenv.isInitialized) return '';
   return dotenv.env['GOOGLE_DIRECTIONS_API_KEY'] ?? '';
 }
 
+/// Layer 1 (repositories) + Layer 2 (services) providers.
+///
+/// Layer 3 (global states) and Layer 4 (view models) are wired in
+/// [VeloToulouseAppWrapper] inside main_common.dart, where they can read
+/// the repositories via context.
 List<SingleChildWidget> get devProviders {
   return <SingleChildWidget>[
     ChangeNotifierProvider<SubscriptionRefreshNotifier>(
       create: (_) => SubscriptionRefreshNotifier(),
     ),
+
+    // ── Layer 1: Repositories ────────────────────────────────────────────
     Provider<UserLocationRepository>(
       create: (_) => DeviceUserLocationRepository(),
     ),
@@ -60,17 +65,10 @@ List<SingleChildWidget> get devProviders {
         return FirestoreInstantPaymentRepository(refreshNotifier: notifier);
       },
     ),
-    ChangeNotifierProvider<StationMapViewModel>(
-      create: (context) => StationMapViewModel(
-        repository: context.read<StationRepository>(),
-        stationBikeInventoryRepository: context
-            .read<StationBikeInventoryRepository>(),
-        userLocationRepository: context.read<UserLocationRepository>(),
-        navigationLauncherRepository: context
-            .read<NavigationLauncherRepository>(),
-        stationRouteRepository: context.read<StationRouteRepository>(),
-      )..loadStations(),
-    ),
+
+    // ── Layer 2: Services ────────────────────────────────────────────────
+    Provider<StationService>(create: (_) => StationService()),
+    Provider<RideService>(create: (_) => RideService()),
   ];
 }
 
