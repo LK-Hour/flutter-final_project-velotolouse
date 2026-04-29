@@ -10,7 +10,7 @@ import 'package:final_project_velotolouse/domain/model/stations/station.dart';
 class StationService {
   /// Filters stations by search query (name or address).
   /// 
-  /// If [isReturnMode] is true, sorts results to show stations with free docks first.
+  /// If [isReturnMode] 
   List<Station> searchStations(
     List<Station> stations,
     String query, {

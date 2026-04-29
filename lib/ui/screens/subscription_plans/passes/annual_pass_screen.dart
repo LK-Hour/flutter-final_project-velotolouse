@@ -126,7 +126,7 @@ class _Body extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        '🔥 Best value — save 45%',
+                        'Best value - save 45%',
                         style: TextStyle(
                           color: Color(0xFFF15B00),
                           fontSize: 12,
@@ -316,7 +316,7 @@ class _Body extends StatelessWidget {
                               ),
                             )
                           : const Text(
-                              'Subscribe • \$99 / year',
+                              'Subscribe - \$99 / year',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
@@ -328,7 +328,7 @@ class _Body extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Billed once yearly · Cancel anytime',
+                'Billed once yearly - Cancel anytime',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFFC1C1C1), fontSize: 12),
               ),

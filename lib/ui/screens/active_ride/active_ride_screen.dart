@@ -174,7 +174,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  'Bike Unlocked! 🎉',
+                  'Bike Unlocked!',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,

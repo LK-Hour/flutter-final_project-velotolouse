@@ -8,11 +8,9 @@ import 'package:final_project_velotolouse/ui/screens/station_map/widgets/search_
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/bottom_ride_panel.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_google_map_canvas.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_info_popup.dart';
-import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_reroute_alert.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/station_search_sheet.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/widgets/return_mode_banner_transition.dart';
 import 'package:final_project_velotolouse/ui/screens/profile/profile_screen.dart';
-import 'package:final_project_velotolouse/ui/screens/qr_scanner/qr_scanner_screen.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:final_project_velotolouse/ui/widgets/ride_completion_modal.dart';
 import 'package:flutter/material.dart';
@@ -62,17 +60,6 @@ class StationMapScreen extends StatelessWidget {
       return;
     }
     viewModel.selectStation(selectedStationId);
-  }
-
-  void _onScanButtonPressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-  ) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const QrScannerScreen(showDemoScanButton: true),
-      ),
-    );
   }
 
   Future<void> _onEndRidePressed(
@@ -160,60 +147,50 @@ class StationMapScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _onNavigateHerePressed(
+  Future<void> _onStationMarkerTapped(
     BuildContext context,
     StationMapViewModel viewModel,
-    Station station,
+    String stationId,
   ) async {
-    final UserLocationStatus status = await viewModel.showRouteToStation(
-      station,
+    viewModel.selectStation(stationId);
+    final Iterable<Station> matches =
+        viewModel.stations.where((Station s) => s.id == stationId);
+    if (matches.isEmpty || !context.mounted) return;
+    final Station station = matches.first;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+        child: StationInfoPopup(
+          station: station,
+          isReturnMode: viewModel.isReturnMode,
+          onNavigate: () async {
+            Navigator.of(context).pop();
+            final UserLocationStatus status =
+                await viewModel.showRouteToStation(station);
+            if (!context.mounted || status == UserLocationStatus.located) {
+              return;
+            }
+            final String message = switch (status) {
+              UserLocationStatus.permissionDenied =>
+                'Location permission denied. Please allow GPS access.',
+              UserLocationStatus.permissionDeniedForever =>
+                'Location permission denied permanently. Enable it in settings.',
+              UserLocationStatus.serviceDisabled =>
+                'GPS is off. Please enable location services.',
+              UserLocationStatus.unavailable =>
+                'Unable to get your current location.',
+              UserLocationStatus.located => '',
+            };
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+          },
+        ),
+      ),
     );
-    if (!context.mounted || status == UserLocationStatus.located) {
-      return;
-    }
-
-    final String message = switch (status) {
-      UserLocationStatus.permissionDenied =>
-        'Location permission denied. Please allow GPS access.',
-      UserLocationStatus.permissionDeniedForever =>
-        'Location permission denied permanently. Enable it in settings.',
-      UserLocationStatus.serviceDisabled =>
-        'GPS is off. Please enable location services.',
-      UserLocationStatus.unavailable => 'Unable to get your current location.',
-      UserLocationStatus.located => '',
-    };
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _onRerouteToDockPressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-  ) {
-    final Station? suggestion = viewModel.suggestedAlternativeDockStation;
-    viewModel.rerouteToSuggestedDock();
-    if (suggestion == null) {
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
-  }
-
-  void _onRerouteToBikePressed(
-    BuildContext context,
-    StationMapViewModel viewModel,
-  ) {
-    final Station? suggestion = viewModel.suggestedAlternativeBikeStation;
-    viewModel.rerouteToSuggestedBikeStation();
-    if (suggestion == null) {
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Rerouted to ${suggestion.name}.')));
   }
 
   void _onProfilePressed(BuildContext context) {
@@ -234,11 +211,6 @@ class StationMapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final StationMapViewModel viewModel = context.watch<StationMapViewModel>();
     final Station? selectedStation = viewModel.selectedStation;
-    final double bottomPanelHeight = viewModel.activeRideStartedAt == null
-        ? 138
-        : 176;
-    final double popupBottomOffset = bottomPanelHeight + 12;
-
     return Scaffold(
       backgroundColor: AppColors.baseSurfaceAlt,
       body: SafeArea(
@@ -286,7 +258,8 @@ class StationMapScreen extends StatelessWidget {
                           routePath: viewModel.activeRoutePath,
                           locateRequestVersion: viewModel.locateRequestVersion,
                           fallbackMarkerPositions: _markerMapPosition,
-                          onStationTap: viewModel.selectStation,
+                          onStationTap: (String id) =>
+                              _onStationMarkerTapped(context, viewModel, id),
                           onMapTap: viewModel.clearSelectedStation,
                         ),
                       ),
@@ -326,47 +299,6 @@ class StationMapScreen extends StatelessWidget {
                             _onLocateCurrentPositionPressed(context, viewModel),
                       ),
                     ),
-                    if (selectedStation != null)
-                      Positioned(
-                        left: 16,
-                        right: 16,
-                        bottom: popupBottomOffset,
-                        child: viewModel.showFullStationRerouteAlert
-                            ? StationRerouteAlert(
-                                selectedStation: selectedStation,
-                                suggestedStation:
-                                    viewModel.suggestedAlternativeDockStation,
-                                onReroute: () =>
-                                    _onRerouteToDockPressed(context, viewModel),
-                                onClose: viewModel.clearSelectedStation,
-                              )
-                            : viewModel.showEmptyStationRerouteAlert
-                            ? StationRerouteAlert(
-                                selectedStation: selectedStation,
-                                suggestedStation:
-                                    viewModel.suggestedAlternativeBikeStation,
-                                onReroute: () =>
-                                    _onRerouteToBikePressed(context, viewModel),
-                                onClose: viewModel.clearSelectedStation,
-                                title: 'No Bikes Available',
-                                description:
-                                    'Your selected station ${selectedStation.name} has no available bikes.',
-                                noSuggestionMessage:
-                                    'No nearby station with bikes found.',
-                                suggestionLabelBuilder: (Station station) =>
-                                    '${station.availableBikes} bikes ready',
-                                rerouteButtonText: 'Reroute to Available Bike',
-                              )
-                            : StationInfoPopup(
-                                station: selectedStation,
-                                isReturnMode: viewModel.isReturnMode,
-                                onNavigate: () => _onNavigateHerePressed(
-                                  context,
-                                  viewModel,
-                                  selectedStation,
-                                ),
-                              ),
-                      ),
                   ],
                 ),
               ),
@@ -381,9 +313,7 @@ class StationMapScreen extends StatelessWidget {
                 activeRideBikeCode: viewModel.activeRideBikeCode,
                 activeRideStationName: viewModel.activeRideStationName,
                 activeRideStartedAt: viewModel.activeRideStartedAt,
-                onScanTap: viewModel.hasActiveRide
-                    ? null
-                    : () => _onScanButtonPressed(context, viewModel),
+                onScanTap: null,
                 onProfileTap: viewModel.hasActiveRide
                     ? null
                     : () => _onProfilePressed(context),

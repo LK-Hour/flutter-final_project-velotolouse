@@ -286,7 +286,7 @@ class _BikeConnectingScreenState extends State<BikeConnectingScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Bike #${widget.bikeCode} • Slot 1',
+                                'Bike #${widget.bikeCode} - Slot 1',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,

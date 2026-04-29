@@ -32,7 +32,7 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
           id: 'aba',
           shortName: 'ABA',
           name: 'ABA Bank',
-          subtitle: 'KHQR · Mobile Banking',
+          subtitle: 'KHQR - Mobile Banking',
           colorHex: 0xFF1E3E93,
         ),
         BankOption(
@@ -52,7 +52,7 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
         BankOption(
           id: 'nbc',
           shortName: 'NBC',
-          name: 'Bakong · NBC',
+          name: 'Bakong - NBC',
           subtitle: 'National KHQR',
           colorHex: 0xFFBE2027,
         ),

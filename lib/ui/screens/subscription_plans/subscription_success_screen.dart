@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/model/subscription_plans/subscription_transaction.dart';
-import '../qr_scanner/qr_scanner_screen.dart';
 
 class SubscriptionSuccessScreen extends StatelessWidget {
   const SubscriptionSuccessScreen({
@@ -108,13 +107,7 @@ class SubscriptionSuccessScreen extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            QrScannerScreen(showDemoScanButton: true),
-                      ),
-                      (route) => route.isFirst,
-                    );
+                    Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF18A957),

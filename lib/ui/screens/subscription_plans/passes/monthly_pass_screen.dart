@@ -313,7 +313,7 @@ class _Body extends StatelessWidget {
                               ),
                             )
                           : const Text(
-                              'Subscribe • \$14.99 / month',
+                              'Subscribe - \$14.99 / month',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
@@ -325,7 +325,7 @@ class _Body extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Renews monthly · Cancel anytime',
+                'Renews monthly - Cancel anytime',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xFFC1C1C1), fontSize: 12),
               ),

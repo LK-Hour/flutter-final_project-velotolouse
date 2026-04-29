@@ -17,6 +17,7 @@ import 'package:final_project_velotolouse/domain/repositories/subscription_plans
 import 'package:final_project_velotolouse/firebase_options.dart';
 import 'package:final_project_velotolouse/main_common.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:final_project_velotolouse/ui/screens/station_map/view_model/station_map_view_model.dart';
@@ -75,7 +76,9 @@ List<SingleChildWidget> get devProviders {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env', isOptional: true);
+  if (!kIsWeb) {
+    await dotenv.load(fileName: '.env', isOptional: true);
+  }
   await _initializeFirebase();
   mainCommon(devProviders);
 }

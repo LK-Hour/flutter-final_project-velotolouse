@@ -35,7 +35,7 @@ class PaymentChoiceScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'One ride or a subscription — you choose.',
+                    'One ride or a subscription - you choose.',
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 16),
@@ -57,7 +57,7 @@ class PaymentChoiceScreen extends StatelessWidget {
                     icon: Icons.calendar_month,
                     iconColor: Color(0xFF6BA4FF),
                     title: 'Subscription Plan',
-                    subtitle: 'Daily, monthly or annual — save up to 45%.',
+                    subtitle: 'Daily, monthly or annual - save up to 45%.',
                     showChevron: true,
                     onTap: () {
                       Navigator.of(context).push(
