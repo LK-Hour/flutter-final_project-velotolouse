@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project_velotolouse/domain/model/subscription_plans/bank_option.dart';
 import 'package:final_project_velotolouse/domain/model/subscription_plans/ride_payment_summary.dart';
-import 'package:final_project_velotolouse/domain/model/subscription_plans/subscription_transaction.dart';
+import 'package:final_project_velotolouse/domain/model/subscription_plans/payment_transactions.dart';
+import 'package:final_project_velotolouse/domain/model/subscription_plans/payment_transaction_core.dart';
 import 'package:final_project_velotolouse/domain/repositories/subscription_plans/instant_payment_repository.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/view_model/subscription_pass_view_model.dart';
 
@@ -19,13 +20,15 @@ class _FakeRepository implements InstantPaymentRepository {
     _subscriptions.insert(
       0,
       SubscriptionTransaction(
-        id: 'tx_${_subscriptions.length + 1}',
+        core: PaymentTransactionCore(
+          id: 'tx_${_subscriptions.length + 1}',
+          bankName: bank.name,
+          bankShortName: bank.shortName,
+          amountUsd: amountUsd,
+          createdAt: DateTime.now(),
+        ),
         planId: planId,
         planLabel: planLabel,
-        amountUsd: amountUsd,
-        bankName: bank.name,
-        bankShortName: bank.shortName,
-        createdAt: DateTime.now(),
         status: 'active',
       ),
     );
@@ -33,17 +36,19 @@ class _FakeRepository implements InstantPaymentRepository {
 
   @override
   Future<void> cancelSubscriptionTransaction(String transactionId) async {
-    final index = _subscriptions.indexWhere((s) => s.id == transactionId);
+    final index = _subscriptions.indexWhere((s) => s.core.id == transactionId);
     if (index != -1) {
       final current = _subscriptions[index];
       _subscriptions[index] = SubscriptionTransaction(
-        id: current.id,
+        core: PaymentTransactionCore(
+          id: current.core.id,
+          bankName: current.core.bankName,
+          bankShortName: current.core.bankShortName,
+          amountUsd: current.core.amountUsd,
+          createdAt: current.core.createdAt,
+        ),
         planId: current.planId,
         planLabel: current.planLabel,
-        bankName: current.bankName,
-        bankShortName: current.bankShortName,
-        amountUsd: current.amountUsd,
-        createdAt: current.createdAt,
         status: 'canceled',
       );
     }

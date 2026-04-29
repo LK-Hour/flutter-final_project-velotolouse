@@ -70,6 +70,7 @@ abstract final class AppRoutes {
             : const ActiveRideArgs(
                 bikeCode: 'CO-04',
                 stationName: 'Capitole Square',
+                sessionId: '',
               );
         return _slide(ActiveRideScreen.fromArgs(args), settings);
 

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../domain/model/subscription_plans/bank_option.dart';
-import '../../../domain/model/subscription_plans/instant_payment_transaction.dart';
-import '../../../domain/model/subscription_plans/payment_transaction_core.dart';
+import '../../../domain/model/subscription_plans/payment_transactions.dart';
+import 'payment_transaction_core_dto.dart';
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
 import '../../../domain/model/subscription_plans/ride_transaction_details.dart';
 
@@ -82,7 +82,7 @@ class InstantPaymentTransactionDto {
   }
 
   InstantPaymentTransaction toDomain() {
-    final core = PaymentTransactionCore(
+    final core = PaymentTransactionCoreDto.fromFields(
       id: id,
       bankName: bankName,
       bankShortName: bankShortName,

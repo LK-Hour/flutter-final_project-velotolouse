@@ -1,5 +1,4 @@
-import 'package:final_project_velotolouse/domain/model/subscription_plans/instant_payment_transaction.dart';
-import 'package:final_project_velotolouse/domain/model/subscription_plans/subscription_transaction.dart';
+import 'package:final_project_velotolouse/domain/model/subscription_plans/payment_transactions.dart';
 import 'package:final_project_velotolouse/domain/repositories/subscription_plans/instant_payment_repository.dart';
 import 'package:final_project_velotolouse/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';

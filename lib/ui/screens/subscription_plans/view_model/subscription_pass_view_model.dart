@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../domain/model/subscription_plans/bank_option.dart';
-import '../../../../domain/model/subscription_plans/subscription_transaction.dart';
+import '../../../../domain/model/subscription_plans/payment_transactions.dart';
 import '../../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 
 class SubscriptionPassViewModel extends ChangeNotifier {
@@ -90,7 +90,7 @@ class SubscriptionPassViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _repository.cancelSubscriptionTransaction(_activeSubscription!.id);
+      await _repository.cancelSubscriptionTransaction(_activeSubscription!.core.id);
       _activeSubscription = null;
       _isProcessing = false;
       notifyListeners();

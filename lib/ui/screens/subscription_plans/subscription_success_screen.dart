@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../domain/model/subscription_plans/subscription_transaction.dart';
+import '../../../domain/model/subscription_plans/payment_transactions.dart';
 import '../qr_scanner/qr_scanner_screen.dart';
 
 class SubscriptionSuccessScreen extends StatelessWidget {

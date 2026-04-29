@@ -7,9 +7,8 @@ import '../../dto/subscription_plans/ride_payment_summary_dto.dart';
 import '../../dto/subscription_plans/subscription_transaction_dto.dart';
 import '../../../domain/model/subscription_plans/bank_option.dart';
 import '../../../domain/model/subscription_plans/instant_payment_data.dart';
-import '../../../domain/model/subscription_plans/instant_payment_transaction.dart';
+import '../../../domain/model/subscription_plans/payment_transactions.dart';
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
-import '../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 import '../../../ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 

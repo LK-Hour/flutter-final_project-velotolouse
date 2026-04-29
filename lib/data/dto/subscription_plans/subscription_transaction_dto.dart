@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../domain/model/subscription_plans/bank_option.dart';
-import '../../../domain/model/subscription_plans/payment_transaction_core.dart';
-import '../../../domain/model/subscription_plans/subscription_transaction.dart';
+import '../../../domain/model/subscription_plans/payment_transactions.dart';
+import 'payment_transaction_core_dto.dart';
 
 class SubscriptionTransactionDto {
   const SubscriptionTransactionDto({
@@ -87,19 +87,19 @@ class SubscriptionTransactionDto {
   }
 
   SubscriptionTransaction toDomain() {
-    final core = PaymentTransactionCore(
+    final core = PaymentTransactionCoreDto.fromFields(
       id: id,
       bankName: bankName,
       bankShortName: bankShortName,
       amountUsd: amountUsd,
       createdAt: createdAt,
-      status: status,
     );
 
     return SubscriptionTransaction(
       core: core,
       planId: planId,
       planLabel: planLabel,
+      status: status,
     );
   }
 

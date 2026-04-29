@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../domain/model/subscription_plans/bank_option.dart';
-import '../../../../domain/model/subscription_plans/subscription_transaction.dart';
+import '../../../../domain/model/subscription_plans/payment_transactions.dart';
 import '../../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 import '../widgets/active_subscription_status.dart';
 import '../subscription_success_screen.dart';
@@ -232,8 +232,11 @@ class _Body extends StatelessWidget {
               const SizedBox(height: 12),
               Consumer<SubscriptionPassViewModel>(
                 builder: (context, viewModel, _) {
-                  final isSubscribeDisabled =
-                      viewModel.isProcessing || viewModel.hasActiveSubscription;
+                  if (viewModel.hasActiveSubscription) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final isSubscribeDisabled = viewModel.isProcessing;
 
                   return SizedBox(
                     height: 52,
@@ -304,14 +307,6 @@ class _Body extends StatelessWidget {
                               child: CircularProgressIndicator(
                                 color: Colors.white,
                                 strokeWidth: 2.5,
-                              ),
-                            )
-                          : viewModel.hasActiveSubscription
-                          ? const Text(
-                              'Subscription Active',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
                               ),
                             )
                           : const Text(

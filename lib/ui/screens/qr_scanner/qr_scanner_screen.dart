@@ -293,11 +293,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
                       Navigator.of(sheetContext).pop();
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => InstantPaymentScreen(
-                            bikeCode: widget.bikeCode ?? 'CO-04',
-                            stationName:
-                                widget.stationName ?? 'Capitole Square',
-                          ),
+                          builder: (_) => InstantPaymentScreen(),
                         ),
                       );
                     },

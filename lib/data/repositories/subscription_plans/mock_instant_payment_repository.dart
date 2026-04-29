@@ -1,10 +1,9 @@
 import '../../../domain/model/subscription_plans/bank_option.dart';
 import '../../../domain/model/subscription_plans/instant_payment_data.dart';
-import '../../../domain/model/subscription_plans/instant_payment_transaction.dart';
+import '../../../domain/model/subscription_plans/payment_transactions.dart';
 import '../../../domain/model/subscription_plans/payment_transaction_core.dart';
 import '../../../domain/model/subscription_plans/ride_payment_summary.dart';
 import '../../../domain/model/subscription_plans/ride_transaction_details.dart';
-import '../../../domain/model/subscription_plans/subscription_transaction.dart';
 import '../../../domain/repositories/subscription_plans/instant_payment_repository.dart';
 import '../../../ui/screens/subscription_plans/state/subscription_refresh_notifier.dart';
 
@@ -131,7 +130,7 @@ class MockInstantPaymentRepository implements InstantPaymentRepository {
   @override
   Future<void> cancelSubscriptionTransaction(String transactionId) async {
     await Future<void>.delayed(const Duration(milliseconds: 400));
-    _subscriptionTransactions.removeWhere((tx) => tx.id == transactionId);
+    _subscriptionTransactions.removeWhere((tx) => tx.core.id == transactionId);
     _refreshNotifier?.markUpdated();
   }
 }

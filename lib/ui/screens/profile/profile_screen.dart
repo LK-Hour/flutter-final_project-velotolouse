@@ -1,5 +1,5 @@
 import 'package:final_project_velotolouse/domain/repositories/subscription_plans/instant_payment_repository.dart';
-import 'package:final_project_velotolouse/domain/model/subscription_plans/subscription_transaction.dart';
+import 'package:final_project_velotolouse/domain/model/subscription_plans/payment_transactions.dart';
 import 'package:final_project_velotolouse/ui/screens/profile/payment_history_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/passes/annual_pass_screen.dart';
 import 'package:final_project_velotolouse/ui/screens/subscription_plans/passes/daily_pass_screen.dart';
@@ -134,8 +134,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      final repository = context.read<InstantPaymentRepository>();
-      await repository.cancelSubscriptionTransaction(_activeSubscription!.id);
+    final repository = context.read<InstantPaymentRepository>();
+    await repository.cancelSubscriptionTransaction(_activeSubscription!.core.id);
       await _loadActiveSubscription();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
